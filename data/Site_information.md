@@ -1,8 +1,8 @@
-##Africa: Great Rift Valley soda lakes##
+## Africa: Great Rift Valley soda lakes
 
 Probably the most famous soda lakes of the world are the ones of the East African Rift Valley. A comprehensive overview of these lakes can be found in the book by Schagerl (2016). For detailed information on the chemical composition of these lakes, refer to the recent study conducted by Lameck et al. (2023). However, it is worth noting that the availability of bacterial amplicon data from these sites is limited. In our study, we included 16S rRNA gene data from five water samples collected from Kenyan soda lakes, namely Bogoria, Elmenteita, Magadi, and Sonachi. These data were submitted under BioProject PRJNA187566 in the NCBI database. Due to the low number of reads, the two sequence sets from Lake Bogoria water were merged in the analysis.
 
-##Asia: Kazakhstan##
+## Asia: Kazakhstan
 
 Kazakhstan encompasses an area approximately twice the size of Western Europe, boasts a remarkable array of permanent and intermittent aquatic habitats and wetlands, covering an estimated 37% of the country's total land area (Boros et al., 2017a). Urivaev (1959) estimated the steppe region of Central-Kazakhstan alone harbored 14 000 shallow freshwater and saline lakes. However, the impact of anthropogenic activities over the past decades has likely resulted in a decline in the abundance of these lakes. To the best of our knowledge, only very limited data is currently available on the planktonic prokaryotic communities of the saline-alkaline lakes of the country.
 To bridge this knowledge gap, extensive sampling campaigns have been carried out in various semi-arid and arid regions of Kazakhstan in recent years by our research group. The goal of these campaigns was to identify soda lakes in Kazakhstan and to reveal the microbial community composition of previously uncharacterized aquatic habitats. 
@@ -15,10 +15,15 @@ Lake Balkhash is a large, shallow and slightly saline lake, ranking as the third
 Adjacent to Lake Balkhash, Lake Alakol is another important saline lake in the region. It covers an area of 2 650 km2 and measures 104 km in length from northwest to southeast, with a width of 52 km. Lake Alakol surpasses Lake Balkhash in depth, with an average depth of 22 m and a maximum depth of 54 m. Salinity varies with the lake axis and with depth, ranges between 1.1 and 10 g/L (Aladin & Plotnikov, 1993).
 In our analysis, we included seven samples collected from different parts of Lake Balkhash during a monitoring campaign in September 2018.
 Furthermore, an additional 27 samples were obtained during a sampling campaign in 2021, focusing on the southeastern shore of Lake Balkhash, Lake Alakol, and the surrounding saline, alkaline lakes. Based on the ion composition of the water, soda and soda-saline lakes were identified alongside the saline sites.
-West Kazakhstan (Aktobe Region) and South Kazakhstan (Zhambyl Region)
+
+*West Kazakhstan (Aktobe Region) and South Kazakhstan (Zhambyl Region)*
+
 In order to identify soda lakes in the Aktobe and Zhambyl regions of Kazakhstan, a sampling campaign was conducted during the years 2018 and 2019. The investigation focused on saline-alkaline water bodies located near the towns of Shalkar (north of the Aral Sea), Belkopa, and Akkol in the southern region. These sampling sites are situated in the Kazakh semi-desert and Central Asian northern desert regions, characterized by semi-arid and arid climates. For our analysis, nine selected samples were included. The salinity of these samples ranged from 1 to 248 g/L, representing a diverse range of saline conditions within the investigated alkaline lakes.
-Asia: Transbaikalia
-Barguzin Valley
+
+## Asia: Transbaikalia
+
+*Barguzin Valley*
+
 As part of our analysis, we included the 16S rRNA gene sequences obtained from a water (brine) sample collected from Lake Gudzhirganskoe. This alkaline lake is located in the valley of the Barguzin River, situated to the east of Lake Baikal, as described by Lavrentyeva et al. (2020).
 Lake Doroninskoe
 Lake Doroninskoe is a meromictic soda lake with a depth of approximately 6 meters. The lake is characterized by a pH level of around 10 and a salinity of approximately 27 g/L. The ion composition of the water reflects the typical characteristics of soda lakes (Gorlenko et al., 2010; Matyugina et al., 2018). Six water samples from 2.5 m, 3.0 m and 3.15 m depth were included in our analysis. These samples were collected during a diurnal campaign in September 2013, as described by Matyugina et al. (2018).
