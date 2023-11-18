@@ -1,13 +1,14 @@
-##Africa: Great Rift Valley soda lakes
+##Africa: Great Rift Valley soda lakes##
 
 Probably the most famous soda lakes of the world are the ones of the East African Rift Valley. A comprehensive overview of these lakes can be found in the book by Schagerl (2016). For detailed information on the chemical composition of these lakes, refer to the recent study conducted by Lameck et al. (2023). However, it is worth noting that the availability of bacterial amplicon data from these sites is limited. In our study, we included 16S rRNA gene data from five water samples collected from Kenyan soda lakes, namely Bogoria, Elmenteita, Magadi, and Sonachi. These data were submitted under BioProject PRJNA187566 in the NCBI database. Due to the low number of reads, the two sequence sets from Lake Bogoria water were merged in the analysis.
 
-##Asia: Kazakhstan
+##Asia: Kazakhstan##
 
 Kazakhstan encompasses an area approximately twice the size of Western Europe, boasts a remarkable array of permanent and intermittent aquatic habitats and wetlands, covering an estimated 37% of the country's total land area (Boros et al., 2017a). Urivaev (1959) estimated the steppe region of Central-Kazakhstan alone harbored 14 000 shallow freshwater and saline lakes. However, the impact of anthropogenic activities over the past decades has likely resulted in a decline in the abundance of these lakes. To the best of our knowledge, only very limited data is currently available on the planktonic prokaryotic communities of the saline-alkaline lakes of the country.
 To bridge this knowledge gap, extensive sampling campaigns have been carried out in various semi-arid and arid regions of Kazakhstan in recent years by our research group. The goal of these campaigns was to identify soda lakes in Kazakhstan and to reveal the microbial community composition of previously uncharacterized aquatic habitats. 
 
 *Northern Kazakhstan*
+
 Water samples were collected during April-May 2015 to investigate the bacterial community composition of several steppe lakes. The analysis included 16S rRNA gene amplicon data from two freshwater and twelve saline lake sites, encompassing a salinity range of 0.5 to 149 g/L and pH values ranging from 7.9 to 9.5. For detailed information on the sampled lakes, refer to Boros et al. (2017).
 South East: Balkhash-Alakol depression
 Lake Balkhash is a large, shallow and slightly saline lake, ranking as the third largest lake in Eurasia in terms of area. Stretching approximately 600 km in length and varying between 9 and 75 km in width, Lake Balkhash covers a total surface area of 18 210 km2.  It consists of two distinct basins, separated by the Uzunaral Strait: a freshwater basin in the West and a saline, deeper water basin in the East. Despite its size, the average water depth remains relatively low, with the Western Basin reaching a maximum depth of 11 m and the Eastern Basin reaching 26 m. The salinity of Lake Balkhash ranges from 0.2 to 5.0 g/L (Sala et al., 2020).
