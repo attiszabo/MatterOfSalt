@@ -53,4 +53,52 @@ We included samples to our analysis collected from the epilimnion (above the che
 
 ## References
 
+Aladin NV, Plotnikov IS. Large saline lakes of former USSR: a summary review. Hydrobiologia 1993; 267:1-12.
+
+Boros E, Ecsedi Z, Oláh J (eds.) Ecology and management of soda pans in the Carpathian Basin. Hortobágy Environmental Association, 2013.
+
+Boros E, Horváth Z, Wolfram G, Vörös L. Salinity and ionic composition of the shallow astatic soda pans in the Carpathian Basin. Ann Limnol 2014; 50:59-69.
+
+Boros E, Jurecska L, Tatár E, Vörös L, Kolpakova M. Chemical composition and trophic state of shallow saline steppe lakes in Central Asia (North Kazakhstan). Environ Monit Assess 2017a; 189:1-12.
+
+Boros E, Katalin V, Vörös L, Horváth Z. Multiple extreme environmental conditions of intermittent soda pans in the Carpathian Basin (Central Europe). Limnologica 2017b; 62:38-46.
+
+Edwardson CF, Hollibaugh JT. Composition and activity of microbial communities along the redox gradient of an alkaline, hypersaline, lake. Front Microbiol 2018; 9:14.
+
+Felföldi, T. Microbial communities of soda lakes and pans in the Carpathian Basin: a review. Biol Futura 2020; 71:393-404.
+
+Gorlenko VM, Buryukhaev SP, Matyugina EB, Borzenko SV, Namsaraev Z, Bryantseva Z. et al. Microbial Communities of the Stratified Soda Lake Doroninskoe (Transbaikal Region). Microbiology 2010; 79:390–401.
+
+Ji M, Kong W, Yue L, Wang J, Deng Y, Zhu L. Salinity reduces bacterial diversity, but increases network complexity in Tibetan Plateau lakes. FEMS Microbiol Ecol 2019; 95:fiz190.
+
+Lameck AS, Skutai J, Boros E. Review of chemical properties of inland soda and saline waters in East Africa (Rift Valley region). J Hydrol Reg Stud 2023; 46:101323
+
+Lavrentyeva EV, Erdyneeva EB, Banzaraktsaeva TG, Kotsyurbenko OR, Baturina OA, Khakhinov VV. et al. Prokaryotic diversity in the biotopes of the gudzhirganskoe Saline Lake (Barguzin Valley, Russia). Microbiology 2020; 89:359-368.
+
+Márton Z, Szabó B, Vad CF, Pálffy K, Horváth Z. Environmental changes associated with drying climate are expected to affect functional groups of pro-and microeukaryotes differently in temporary saline waters. Sci Rep 2023; 13:3243.
+
+Matyugina E, Belkova N, Borzenko S, Lukyanov P, Kabilov M, Baturina O. et al. Structure and diversity dynamics of microbial communities at day and night: investigation of meromictic Lake Doroninskoe, Transbaikalia, Russia. J Oceanol Limnol 2018; 36:1978-1992.
+
+Phillips AA, Speth DR, Miller LG, Wang XT, Wu F, Medeiros PM. et al. Microbial succession and dynamics in meromictic Mono Lake, California. Geobiology 2021; 19:376-393.
+
+Sala R, Deom JM, Aladin NV, Plotnikov IS, Nurtazin S. Geological history and present conditions of Lake Balkhash. In: Mischke S (ed). Large Asian Lakes in a Changing World: Natural State and Human Impact. Springer Nature, 2020. pp 143-175.
+
+Schagerl M (ed). Soda Lakes of East Africa. Springer Cham, 2016.
+
+Sinclair L, Osman OA, Bertilsson S, Eiler A. Microbial community composition and diversity via 16S rRNA gene amplicons: evaluating the illumina platform. PloS one 2015; 10: e0116955.
+
+Szabó A, Korponai K, Kerepesi C, Somogyi B, Vörös L, Bartha D. et al. Soda pans of the Pannonian steppe harbor unique bacterial communities adapted to multiple extreme conditions. Extremophiles 2017; 21:639-649.
+
+Szabó A, Korponai K, Somogyi B, Vajna B, Vörös L, Horváth Z. et al. Grazing pressure-induced shift in planktonic bacterial communities with the dominance of acIII-A1 actinobacterial lineage in soda pans. Sci Rep 2020; 10:1-12.
+
+Szabó B, Szabó A, Vad CF, Boros E, Lukić D, Ptacnik R. et al. Microbial stowaways: Waterbirds as dispersal vectors of aquatic pro‐and microeukaryotic communities. J Biogeogr 2022; 49:1286-1298.
+
+Szuróczki S, Szabó A, Korponai K, Felföldi T, Somogyi B, Márialigeti K. et al. Prokaryotic community composition in a great shallow soda lake covered by large reed stands (Neusiedler See/Lake Fertő) as revealed by cultivation-and DNA-based analyses. FEMS Microbiol Ecol 2020; 96:fiaa159.
+
+Urivaev VA (ed). Surface water resources in areas of virgin and fallow lands. Leningrad: Hydrometeoizdat, 1959.
+
+Williams WD (ed). Guidelines of lake management. Volume 6: Management of inland saline waters. International Lake Environment Committee Foundation, Japan, 1998.
+Yue L, Kong W, Ji M, Liu J, Morgan-Kiss RM. Community response of microbial primary producers to salinity is primarily driven by nutrients in lakes. Sci Total Environ 2019; 696:134001.
+
+Zorz JK, Sharp C, Kleiner M, Gordon PM, Pon RT, Dong X. et al. A shared core microbiome in soda lakes separated by large distances. Nat Commun 2019; 10:4230.
 
