@@ -50,3 +50,7 @@ In their study, Zorz et al. (2019) conducted a comprehensive investigation of mi
 
 Mono Lake is an  athalassic hypersaline, alkaline lake situated in California, USA, east of the Sierra Nevada Mountains on the western edge of the Great Basin. It has a high salinity of approximately 90 g/L and a pH of around 9.8. Although the lake is usually monomictic, it can undergo extended periods of stratification, especially following wet winters, resulting in a seasonal oxycline and anoxic conditions in its lower layer (Edwardson & Hollibaugh, 2018).
 We included samples to our analysis collected from the epilimnion (above the chemocline at 12 m depth) at Station 6 in the south basin of Mono Lake. After quality filtering, the dataset included 16S rRNA gene amplicon sets from a sample collected at a depth of 10 meters in July 2012 (Edwardson & Hollibaugh 2018) and 9 samples collected at depths of 0, 5, 10, and 12 m from Phillips et al. (2021). From the latter study, the triplicate samples from September 2017 were merged for the analysis. Based on ion chemistry data provided by Nielsen & DePaolo (2013), the lake was classified as a soda type. It is important to note that chloride concentrations in the water are nearly as high as carbonates, and the sulfate content was also remarkable, approximately 17 e%. Williams (1998) reported a similar ionic composition, highlighting some variation in anionic composition with changing salinities, although it was not substantial.
+
+## References
+
+
