@@ -30,7 +30,7 @@ sffinfo(sff=run_name.sff)
 
 ```{bash}
 trim.flows(flow=run_name.flow, oligos=run_name_barcodes_341F_785R.oligos, minflows=350, maxflows=700, pdiffs=1)
-  #515F_806R.oligos used for the V4 dataset, 341F_805R.oligos for the V3-V4 dataset
+  #run_name_barcodes_515F_806R.oligos used for the V4 dataset, run_name_barcodes_341F_805R.oligos for the V3-V4 dataset
 ```
 
 #### Denoise flowgrams
@@ -42,7 +42,7 @@ shhh.flows(file=run_name.flow.files)
 #### Trim barcode, primers and quality filter
 ```{bash}
 trim.seqs(fasta=current, name=current, oligos=run_name_barcodes_341F_785R.oligos, pdiffs=1, bdiffs=0, maxhomop=8, flip=T)
-  #515F_806R.oligos used for the V4 dataset, 341F_805R.oligos for the V3-V4 dataset
+  #run_name_barcodes_515F_806R.oligos used for the V4 dataset, run_name_barcodes_341F_805R.oligos for the V3-V4 dataset
 ```
 
 *oligos file*(https://mothur.org/wiki/oligos_file/):\
@@ -51,6 +51,9 @@ barcode   *SAMPLE2_BARCODE*   SAMPLE2\
 barcode   *SAMPLE3_BARCODE*   SAMPLE3\
 forward   CCTACGGGNGGCWGCAG   341F\
 reverse   GACTACHVGGGTATCTAATCC  785R\
+forward   GTGNCAGCNGCCGCGGTAA   515F\
+reverse   GGACTACNNGGGTNTCTAAT    805R\
+
 
 
 #### Summarize sequences
