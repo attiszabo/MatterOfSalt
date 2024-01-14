@@ -162,7 +162,7 @@ summary.seqs(fasta=current, count=current)
 count.groups(count=current)
 ```
 
-# Merging datasets
+## Merging datasets
 
 #### For the V3-V4 dataset
 
@@ -188,7 +188,7 @@ unique.seqs(fasta=current, count=current)
 summary.seqs(fasta=current, count=current)
 ```
 
-# Processing quality filtered and trimmed, merged datasets (V4/V3-V4)
+## Processing quality filtered and trimmed, merged datasets (V4/V3-V4)
 
 #### Sequence Alignment
 
@@ -246,7 +246,7 @@ remove.groups(fasta=current, count=current, groups=sample_x-sample_y-sample_z)
 count.groups(count=current)
 ```
 
-# OTU-based analyses
+## OTU-based analyses
 
 #### Calculate distances and clustering sequences to OTUs
 ```{bash}
@@ -275,7 +275,7 @@ summary.single(shared=current, subsample=T, calc=nseqs-coverage-sobs-ace-chao-si
 sub.sample(shared=current)
 ```
 
-# More-detailed OTU taxonomy using a freshwater database with SILVA 
+## More-detailed OTU taxonomy using a freshwater database with SILVA 
 
 Additional Taxonomic assignments of the OTU99 representatives for both datasets were made using TaxAss (Rohwer et al., 2018 Msphere) with the FreshTrain 2020Jun15 and Silva SSU v138 databases
 
