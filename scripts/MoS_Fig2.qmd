@@ -27,7 +27,7 @@ warning: false
 library(tidyverse)    # 2.0.0, 
                       # permute 0.9-7, lubridate	1.9.2, forcats	1.0.0, stringr	1.5.0, 
                       # dplyr	1.1.2, purrr	1.0.1, readr	2.1.4, tidyr	1.3.0, tibble	3.2.1, 
-                      # ggplot2	3.4.2
+                      # ggplot2	3.4.2 # ensure this version for compatibility with ggtree and ggnewscale
 library(indicspecies) # 1.7.14
 library(ggtree)       # 3.10.0
 library(ggnewscale)   # 0.4.9
@@ -57,13 +57,17 @@ otu_table <- read.table("../data/V4_otutable99.shared", header = TRUE, dec = "."
               select(-label, -numOtus)
 
 # Sample metadata
-meta <- read.table("../data/v4_v7_meta.txt", header = TRUE, dec = ",", na.strings = "?", row.names = 1,
-                   sep = "\t", fileEncoding = "latin1")
+meta <- read.csv("../data/V4_meta.csv", header = TRUE, na.strings = "?", row.names = 1,
+                   fileEncoding = "latin1")
 
 # Indicator OTUs merged with metadata
 indi_data <- read.table("../data/indic_otus_data_type.txt", header=TRUE, na.strings = "?",
                         sep="\t", stringsAsFactors = FALSE, check.names = FALSE)  %>%
                         rename(., "label" = "otus")
+
+otutax <- read.table("../data/V4_otus.98.80.80.taxonomy", header=TRUE,
+                     row.names=2, sep="\t")
+
 ```
 
 ## Identifying OTUs indicating ionic composition types
@@ -101,9 +105,6 @@ summary_text
 
 # get OTU taxonomy from the TaxAss results
 
-otutax <- read.table("../data/otus.98.80.80.taxonomy_V4_v5.taxonomy", header=TRUE,
-                     row.names=2, sep="\t")
-
 indi_otutax <- otutax[rownames(otutax) %in% indi_data$label, ]
 indi_spec <- as.list(row.names(indi_otutax))
 indi_otu <- t(otu_table) %>%
@@ -122,7 +123,7 @@ l_indi_data_sal <-pivot_longer(indi_data_sal, cols = 3:6)
 l_indi_data_sal$name <- factor(l_indi_data_sal$name, levels=c("freshwater", "soda", "soda-saline", "saline"))
 ```
 
-## creating a phylogenetic tree
+## Creating a phylogenetic tree
 
 To create a phylogenetic tree of the indicator OTUs (n = 474), we will get back to mothur.
 Indicator OTU IDs were extracted from 'indicator_summary.txt' to create a mothur compatible list 'indicotus.accnos'
@@ -150,7 +151,7 @@ mothur "#clearcut(fasta=otu.rep.mod.pick.fasta, DNA=T, version=T)
 
 # import the newick formatted phylogenetic tree created with mothur for the indicator OTUs
 
-inditree <- read.tree("otu.rep.mod.pick.tre")
+inditree <- read.tree("../data/otu.rep.mod.pick.tre")
 
 # visualize with ggtree
 
@@ -174,7 +175,9 @@ phyla <- data.frame(node=c(852, 777, 487, 609, 767, 903, 931, 888), phyl=c("Cyan
 
 # highlighting monophyletic groups representing a given type
 
-inner_nodes <- data.frame(node=c(675, 794, 906, 767, 838, 507, lineage=c("betI", "Frankiales", "Verrucomicrobiales", "Gemmatimonadota", "Nitriliruptorales", "Cytophagales")))
+inner_nodes <- data.frame(node=c(675, 794, 906, 767, 838, 507, 543, 653), 
+                          lineage=c("betI", "Frankiales", "Verrucomicrobiales", "Gemmatimonadota",
+                                    "Nitriliruptorales", "Cytophagales", "Flavobacteriaceae", "Enterobacterales"))
 
 phyl_cols <- c("Cyanobacteria" = "paleturquoise1", "Actinobacteriota" = "coral1", 
                "Bacteroidota" = "olivedrab3", "Proteobacteria" = "dodgerblue3",
@@ -192,22 +195,22 @@ pp <- q + geom_hilight(data=phyla, aes(node=node, fill=phyl), alpha =.4) +
                                                  title.position = "top"
                                                              )) +
           new_scale_fill() +
-          geom_nodepoint(aes(subset = node == 675), fill="#B6E665",  size = 1.5, shape = 21,
-                      alpha =.9) +
+          geom_nodepoint(aes(subset = node == 675), fill="#B6E665",  size = 1.5, shape = 21, 
+                         alpha =.9) +
           geom_nodepoint(aes(subset = node == 794), fill="#B6E665",  size = 1.5, shape = 21,
-                      alpha =.9) +
+                         alpha =.9) +
           geom_nodepoint(aes(subset = node == 906), fill="#F8766D",  size = 1.5, shape = 21,
-                      alpha =.9) +
+                         alpha =.9) +
           geom_nodepoint(aes(subset = node == 767), fill="#F8766D",  size = 1.5, shape = 21,
-                      alpha =.9) +
+                         alpha =.9) +
           geom_nodepoint(aes(subset = node == 838), fill="#F8766D",  size = 1.5, shape = 21,
-                      alpha =.9) +
+                         alpha =.9) +
           geom_nodepoint(aes(subset = node == 507), fill="#F8766D",  size = 1.5, shape = 21,
-                      alpha =.9) +
+                         alpha =.9) +
           geom_nodepoint(aes(subset = node == 543), fill="#00BFC4",  size = 1.5, shape = 21,
-                      alpha =.9) +
+                         alpha =.9) +
           geom_nodepoint(aes(subset = node == 653), fill="#00BFC4",  size = 1.5, shape = 21,
-                      alpha =.9)
+                         alpha =.9)
 
 pp
 
