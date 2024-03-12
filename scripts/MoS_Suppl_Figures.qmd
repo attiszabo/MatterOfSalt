@@ -1,0 +1,724 @@
+---
+title: "Supplementary Figures"
+subtitle: "*A matter of salt: global assessment of the effect of salt ionic composition as a driver of bacterial diversity*"
+title-block-banner: true
+author: 
+    name: "Attila Szabo"
+    affiliation: 
+        - "Swedish University of Agricultural Sciences"
+        - "Institute of Aquatic Ecology, HUN-REN CER"
+    orcid: "0000-0002-7777-8166"
+    email: "attila.szabo@slu.se"
+date: 2024-02-17
+license: "CC BY"
+format:
+    html:
+        code-fold: true
+        theme: flatly
+        embed-resources: true
+language:
+  code-summary: Click to show code
+code-tools: true
+warning: false
+---
+
+### Setting up the R environment
+
+```{r import packages}
+# R version: 4.3.0
+# Libraries:
+library(tidyverse)    # 2.0.0, 
+                      # permute 0.9-7, lubridate	1.9.2, forcats	1.0.0, stringr	1.5.0, 
+                      # dplyr	1.1.2, purrr	1.0.1, readr	2.1.4, tidyr	1.3.0, tibble	3.2.1, 
+                      # ggplot2	3.4.2
+library(vegan)        # 2.6-4
+library(ggtern)       # 3.4.2
+
+# Set seed
+seed <- 14560722
+set.seed(seed)
+```
+
+### Import data
+
+```{r import_data}
+# V4 dataset
+V4_otu_table <- read.table("../data/V4_otutable99.shared", header = TRUE, dec = ".",
+                           na.strings = "?", row.names = 2, sep ="\t") %>%
+              select(-label, -numOtus)
+
+# V4 metadata
+V4_meta <- read.csv("../data/v4_v9_meta.csv", header = TRUE, na.strings = "?", row.names = 1,
+                   fileEncoding = "latin1")
+
+as_tibble(V4_meta)
+
+# V3V4 dataset
+V3V4_otu_table <- read.table("../data/V3V4_otutable99.shared", header=TRUE, dec=".", na.strings = "?",
+                             row.names=2, sep="\t") %>%
+                  select(-label, -numOtus)
+
+# adding colours to ionic composition types
+cols <- c("freshwater" = "#B6E665", 
+          "saline" = "#00BFC4",
+          "soda" ="#F8766D",
+          "soda-saline" = "#C77CFF")
+
+```
+### Supplementary Figure S1. Detalied maps of the sampling sites
+
+These maps were created using the QGIS software v3.28.6. The base map used is Esri.WorldTopoMap, sourced from Esri (https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}).
+
+
+### Supplementary Figure S2
+
+```{r ternary plots}
+# Adding Na+ and K+ together
+V4_meta$Na_K <- V4_meta$Na + V4_meta$K
+
+# soda
+soda_subset <- V4_meta %>%
+  filter(V4_meta$type == "soda")
+
+soda_cation_plot <- ggtern(soda_subset, aes(Ca, Na_K, Mg)) +
+  labs(title = "soda",
+       x = expression(paste("Ca"^"2+")), 
+       y = expression(paste("Na"^"+" + "K"^"+")), 
+       z = expression(paste("Mg"^"2+"))) +
+  geom_point() +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5, vjust = -1))
+
+soda_cation_plot
+
+soda_anion_plot <- ggtern(soda_subset, aes(SO4, HCO3_CO3, Cl)) +
+  geom_point() +
+    labs(title = "soda",
+       x = expression(paste("SO"[4]^"2-")), 
+       y = expression(paste("HCO"[3]^"-" + "CO"[3]^"2-")),
+       z = expression(paste("Cl"^ "-"))) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, vjust = -1))
+
+soda_anion_plot
+
+# soda-saline
+sodasaline_subset <- V4_meta %>%
+  filter(V4_meta$type == "soda-saline")
+
+sodasaline_cation_plot <- ggtern(sodasaline_subset, aes(Ca, Na_K, Mg)) +
+  labs(title = "soda-saline",
+       x = expression(paste("Ca"^"2+")), 
+       y = expression(paste("Na"^"+" + "K"^"+")), 
+       z = expression(paste("Mg"^"2+"))) +
+  geom_point() +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5, vjust = -1))
+
+sodasaline_cation_plot
+
+
+sodasaline_anion_plot <- ggtern(sodasaline_subset, aes(SO4, HCO3_CO3, Cl)) +
+  geom_point() +
+    labs(title = "soda-saline", 
+       x = expression(paste("SO"[4]^"2-")), 
+       y = expression(paste("HCO"[3]^"-" + "CO"[3]^"2-")),
+       z = expression(paste("Cl"^ "-"))) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, vjust = -1))
+
+sodasaline_anion_plot
+
+# saline
+saline_subset <- V4_meta %>%
+  filter(V4_meta$type == "saline")
+
+saline_cation_plot <- ggtern(saline_subset, aes(Ca, Na_K, Mg)) +
+  labs(title = "saline", 
+       x = expression(paste("Ca"^"2+")), 
+       y = expression(paste("Na"^"+" + "K"^"+")), 
+       z = expression(paste("Mg"^"2+"))) +
+  geom_point() +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5, vjust = -1))
+
+saline_cation_plot
+
+saline_anion_plot <- ggtern(saline_subset, aes(SO4, HCO3_CO3, Cl)) +
+  geom_point() +
+    labs(title = "saline", 
+       x = expression(paste("SO"[4]^"2-")), 
+       y = expression(paste("HCO"[3]^"-" + "CO"[3]^"2-")),
+       z = expression(paste("Cl"^ "-"))) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, vjust = -1))
+
+saline_anion_plot
+
+# freshwater
+freshwater_subset <- V4_meta %>%
+  filter(V4_meta$type == "freshwater")
+
+freshwater_cation_plot <- ggtern(freshwater_subset, aes(Ca, Na_K, Mg)) +
+  labs(title = "freshwater", 
+       x = expression(paste("Ca"^"2+")), 
+       y = expression(paste("Na"^"+" + "K"^"+")), 
+       z = expression(paste("Mg"^"2+"))) +
+  geom_point() +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5, vjust = -1))
+
+freshwater_cation_plot
+
+freshwater_anion_plot <- ggtern(freshwater_subset, aes(SO4, HCO3_CO3, Cl)) +
+  geom_point() +
+    labs(title = "freshwater", 
+       x = expression(paste("SO"[4]^"2-")), 
+       y = expression(paste("HCO"[3]^"-" + "CO"[3]^"2-")),
+       z = expression(paste("Cl"^ "-"))) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, vjust = -1))
+
+freshwater_anion_plot
+
+ternary_plots <- ggtern::grid.arrange(soda_cation_plot, soda_anion_plot,
+                                      sodasaline_cation_plot, sodasaline_anion_plot,
+                                      saline_cation_plot, saline_anion_plot,
+                                      freshwater_cation_plot, freshwater_anion_plot,
+                                      ncol = 2, nrow = 4, 
+                                      clip = "inherit",
+                                      widths = c(2, 2),
+                                      heights = c(1, 1, 1, 1),
+                                      padding = unit(c(0.1,0.1,0.1,0.1), "mm"))
+
+# save the plot
+ternary_grob  <- arrangeGrob(ternary_plots)
+
+ggsave("SupplFig2.png", ternary_grob, device = "png", scale = 1.2, width = 210, height = 280,
+       units = c("mm"), dpi = 600)
+ggsave("SupplFig2.svg", ternary_grob, device = "svg", scale = 1.2, width = 210, height = 280,
+       units = c("mm"), dpi = 600)
+```
+
+### Supplementary Figure S3
+
+```{r, relative ionic gradient}
+# Creating the NMDS as for Fig 1
+otu_mds <- metaMDS(V4_otu_table)
+otu_mds
+stressplot(otu_mds)
+
+# very raw plotting
+plot(otu_mds)
+orditorp(otu_mds, display="sites", cex=1, air=0.01)
+
+# rotate the ordination with increasing salinity
+otu_mds_rot <- with(V4_meta, MDSrotate(otu_mds, Salinity, na.rm = T))
+plot(otu_mds_rot) +
+orditorp(otu_mds_rot,display="sites",cex=1,air=0.01)
+
+## create a decent plot with ggplot2
+# export site coordinates
+data_scores <- as.data.frame(scores(otu_mds_rot, "sites"))
+data_scores$site <- rownames(otu_mds_rot)  
+
+grp <-V4_meta$type
+cont<-V4_meta$Continent
+
+data_scores$grp <- grp
+data_scores$cont <- cont
+head(data_scores)
+
+nmds_v4_HCO3_CO3 <- ggplot(data_scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(aes(fill = V4_meta$HCO3_CO3, shape = cont), size = 4, stroke = 1.2) +
+  scale_fill_gradientn(colors = c("white", "#F8766D"), space = "Lab", na.value = "grey50",guide = "colourbar") +
+  scale_shape_manual(values = c(25, 24, 22, 21)) +
+  labs(fill = "Ion equivalent %", shape="Continent") +
+  coord_equal() +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size=18),
+        axis.title.y = element_text(size=18),
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size=16),
+        legend.title = element_text(size=14),
+        plot.background = element_blank())
+
+nmds_v4_HCO3_CO3
+
+nmds_v4_Cl <- ggplot(data_scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(aes(fill = V4_meta$Cl, shape = cont), size = 4, stroke = 1.2) +
+  scale_fill_gradientn(colors = c("white", "#00BFC4"), space = "Lab", na.value = "grey50",guide = "colourbar") +
+  scale_shape_manual(values = c(25, 24, 22, 21)) +
+  labs(fill = "Ion equivalent %", shape="Continent") +
+  coord_equal() +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size=18),
+        axis.title.y = element_text(size=18),
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size=16),
+        legend.title = element_text(size=14),
+        plot.background = element_blank())
+
+nmds_v4_Cl
+
+nmds_v4_SO4<- ggplot(data_scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(aes(fill = V4_meta$SO4, shape = cont), size = 4, stroke = 1.2) +
+  scale_fill_gradientn(colors = c("white", "#7CAE00"), space = "Lab", na.value = "grey50",guide = "colourbar") +
+  scale_shape_manual(values = c(25, 24, 22, 21)) +
+  labs(fill = "Ion equivalent %", shape="Continent") +
+  coord_equal() +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size=18),
+        axis.title.y = element_text(size=18),
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size=16),
+        legend.title = element_text(size=14),
+        plot.background = element_blank())
+
+nmds_v4_SO4
+
+ion_e_nmds <- grid.arrange(nmds_v4_HCO3_CO3, nmds_v4_Cl, nmds_v4_SO4, nrow = 2)
+
+# fine arrangements of the subplots with Inkscape 1.2
+
+```
+
+### Supplementary Figure S4
+
+```{r, NMDS ionic composition types}
+# Subset data based on ionic composition types
+## soda
+soda_meta <- filter(V4_meta, type == "soda")
+soda_otu <- V4_otu_table[rownames(V4_otu_table) %in% rownames(soda_meta), ]
+soda_otu_mds <- metaMDS(soda_otu)
+soda_otu_mds
+stressplot(soda_otu_mds)
+
+soda_otu_mds_rot <- MDSrotate(soda_otu_mds, soda_meta$Salinity, na.rm = T)
+plot(soda_otu_mds_rot)
+
+soda_data_scores <- as.data.frame(scores(soda_otu_mds_rot, "sites"))
+soda_data_scores$site <- rownames(soda_otu_mds_rot)  
+
+soda_grp <-soda_meta$type
+soda_cont<-soda_meta$Continent
+
+soda_data_scores$grp <- soda_grp
+soda_data_scores$cont <- soda_cont
+head(soda_data_scores)
+
+soda_V4_nmds <- ggplot(soda_data_scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(aes(shape = cont), fill = "#F8766D", size = 3, stroke = 1.2) +
+  scale_fill_manual(values = cols) +
+  scale_shape_manual(values = c(25, 24, 22, 21)) +
+  labs(shape="Continent") +
+  coord_equal() +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size=16),
+        axis.title.y = element_text(size=16),
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=14),
+        plot.background = element_blank())
+
+soda_V4_nmds
+
+## soda-saline
+sodasaline_meta <- filter(V4_meta, type == "soda-saline")
+sodasaline_otu <- V4_otu_table[rownames(V4_otu_table) %in% rownames(sodasaline_meta), ]
+sodasaline_otu_mds <- metaMDS(sodasaline_otu)
+sodasaline_otu_mds
+stressplot(sodasaline_otu_mds)
+
+sodasaline_otu_mds_rot <- MDSrotate(sodasaline_otu_mds, sodasaline_meta$Salinity, na.rm = T)
+plot(sodasaline_otu_mds_rot)
+
+sodasaline_data_scores <- as.data.frame(scores(sodasaline_otu_mds_rot, "sites"))
+sodasaline_data_scores$site <- rownames(sodasaline_otu_mds_rot)  
+
+sodasaline_grp <-sodasaline_meta$type
+sodasaline_cont<-sodasaline_meta$Continent
+
+sodasaline_data_scores$grp <- sodasaline_grp
+sodasaline_data_scores$cont <- sodasaline_cont
+head(sodasaline_data_scores)
+
+sodasaline_V4_nmds <- ggplot(sodasaline_data_scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(aes(shape = cont), fill = "#C77CFF", size = 3, stroke = 1.2) +
+  scale_fill_manual(values = cols) +
+  scale_shape_manual(values = c(25, 24, 22, 21)) +
+  labs(shape="Continent") +
+  coord_equal() +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size=16),
+        axis.title.y = element_text(size=16),
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=14),
+        plot.background = element_blank())
+
+sodasaline_V4_nmds
+
+## saline
+saline_meta <- filter(V4_meta, type == "saline")
+saline_otu <- V4_otu_table[rownames(V4_otu_table) %in% rownames(saline_meta), ]
+saline_otu_mds <- metaMDS(saline_otu)
+saline_otu_mds
+stressplot(saline_otu_mds)
+
+saline_otu_mds_rot <- MDSrotate(saline_otu_mds, saline_meta$Salinity, na.rm = T)
+plot(saline_otu_mds_rot)
+
+saline_data_scores <- as.data.frame(scores(saline_otu_mds_rot, "sites"))
+saline_data_scores$site <- rownames(saline_otu_mds_rot)  
+
+saline_grp <-saline_meta$type
+saline_cont<-saline_meta$Continent
+
+saline_data_scores$grp <- saline_grp
+saline_data_scores$cont <- saline_cont
+head(saline_data_scores)
+
+saline_V4_nmds <- ggplot(saline_data_scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(aes(shape = cont), fill = "#00BFC4", size = 3, stroke = 1.2) +
+  scale_fill_manual(values = cols) +
+  scale_shape_manual(values = c(25, 24, 22, 21)) +
+  labs(shape="Continent") +
+  coord_equal() +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size=16),
+        axis.title.y = element_text(size=16),
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=14),
+        plot.background = element_blank())
+
+saline_V4_nmds
+
+## freshwater
+freshwater_meta <- filter(V4_meta, type == "freshwater")
+freshwater_otu <- V4_otu_table[rownames(V4_otu_table) %in% rownames(freshwater_meta), ]
+freshwater_otu_mds <- metaMDS(freshwater_otu)
+freshwater_otu_mds
+stressplot(freshwater_otu_mds)
+
+freshwater_otu_mds_rot <- MDSrotate(freshwater_otu_mds, freshwater_meta$Salinity, na.rm = T)
+plot(freshwater_otu_mds_rot)
+
+freshwater_data_scores <- as.data.frame(scores(freshwater_otu_mds_rot, "sites"))
+freshwater_data_scores$site <- rownames(freshwater_otu_mds_rot)  
+
+freshwater_grp <-freshwater_meta$type
+freshwater_cont<-freshwater_meta$Continent
+
+freshwater_data_scores$grp <- freshwater_grp
+freshwater_data_scores$cont <- freshwater_cont
+head(freshwater_data_scores)
+
+freshwater_V4_nmds <- ggplot(freshwater_data_scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(aes(shape = cont), fill = "#B6E665",  size = 3, stroke = 1.2) +
+  scale_fill_manual(values = cols) +
+  scale_shape_manual(values = c(25, 24, 22, 21)) +
+  labs(shape="Continent") +
+  coord_equal() +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size=16),
+        axis.title.y = element_text(size=16),
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=14),
+        plot.background = element_blank())
+
+freshwater_V4_nmds
+
+ion_comp_type_sep_nmds <- grid.arrange(soda_V4_nmds, sodasaline_V4_nmds, saline_V4_nmds, freshwater_V4_nmds, nrow = 2)
+
+ggsave("SupplFig4.png", ion_comp_type_sep_nmds, device = "png", scale = 1.4, width = 210, 
+       height = 210, units = c("mm"), dpi = 400)
+ggsave("SupplFig4.svg", ion_comp_type_sep_nmds, device = "svg", scale = 2, width = 210,
+       height = 280, units = c("mm"), dpi = 400)
+
+```
+
+### Supplementary Figure S5
+
+```{r, simper V3-V4}
+# filter meta for V3-V4
+
+V3V4_meta <- V4_meta[rownames(V4_meta) %in% rownames(V3V4_otu_table), ]
+
+# create an NMDS ordination
+
+V3V4_otu_nmds <- metaMDS(V3V4_otu_table)
+V3V4_otu_nmds
+stressplot(V3V4_otu_nmds)
+
+plot(V3V4_otu_nmds)
+orditorp(V3V4_otu_nmds, display="sites", cex=1, air=0.01)
+
+# rotate with salinity
+
+V3V4_otu_nmds_rot <- with(V3V4_meta, MDSrotate(V3V4_otu_nmds, V3V4_meta$Salinity, na.rm = T))
+plot(V3V4_otu_nmds_rot)
+orditorp(V3V4_otu_nmds_rot,display="sites",cex=1,air=0.01)
+
+V3V4_data_scores <- as.data.frame(scores(V3V4_otu_nmds_rot, "sites"))
+V3V4_data_scores$site <- rownames(V3V4_otu_nmds_rot)  
+
+V3V4_grp <-V3V4_meta$type
+V3V4_cont<-V3V4_meta$Continent
+
+V3V4_data_scores$grp <- V3V4_grp
+V3V4_data_scores$cont <- V3V4_cont
+head(V3V4_data_scores)
+
+V3V4_species_scores <- as.data.frame(scores(V3V4_otu_nmds_rot, "species"))
+V3V4_species_scores$species <- rownames(V3V4_otu_nmds_rot)
+
+name_otus<-read.table("../data/V3V4_simper25.txt",header = TRUE, row.names = 1,sep ="\t")                         name <- name_otus$name
+V3V4_species_scores$name  <- name
+head(V3V4_species_scores)
+
+V3V4_NMDS <- ggplot(V3V4_data_scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_text(data=V3V4_species_scores, aes(x=NMDS1,y=NMDS2,label=name),alpha=0.5, size = 5) +
+  geom_point(aes(fill = grp, shape = cont), size = 4, stroke = 1.2) +
+  scale_fill_manual(values = cols) +
+  scale_shape_manual(values = c(24, 22, 21)) +
+  labs(fill = "Ionic composition type", shape="Continent") +
+  coord_equal() +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size=18),
+        axis.title.y = element_text(size=18),
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size=16),
+        legend.title = element_text(size=14),
+        plot.background = element_blank())
+
+V3V4_NMDS
+
+```
+### Supplementary Figure S6
+### perform NMDS
+
+```{r nmds}
+# Selecting samples present in the V3-V4 dataset from the V4 dataset
+
+V4_otu_table_sub <- V4_otu_table[rownames(V4_otu_table) %in% rownames(V3V4_otu_table), ]
+V4_meta_sub <- V4_meta[rownames(V4_meta) %in% rownames(V3V4_meta), ]
+
+V4_otu_nmds <- metaMDS(V4_otu_table_sub)
+V4_otu_nmds
+stressplot(V4_otu_nmds)
+
+plot(V4_otu_nmds)
+orditorp(V4_otu_nmds, display="sites", cex=1, air=0.01)
+
+V4_otu_nmds_rot <- with(V4_meta_sub, MDSrotate(V4_otu_nmds, V4_meta_sub$Salinity, na.rm = T))
+plot(V4_otu_nmds_rot)
+orditorp(V4_otu_nmds_rot,display="sites",cex=1,air=0.01)
+
+# run procrustes
+
+proc <- procrustes(X = V4_otu_nmds_rot, Y = V3V4_otu_nmds_rot)
+proc
+
+plot(proc, kind = 1, type = "p", xlab = "NMDS1", ylab = "NMDS2", cex = 0.8)
+plot(proc, kind = 1, type = "text", xlab = "NMDS1", ylab = "NMDS2", cex = 0.3)
+
+plot(proc, kind = 2)
+
+protest(X = V4_otu_nmds_rot, Y = V3V4_otu_nmds_rot, scores = "sites", permutations = 999)
+
+```
+### Evaluating Distance-decay relationships
+
+``` {r DDR}
+# For all samples
+# Calculating Bray-Curtis (BC) dissimilarity
+
+braydissim <- vegdist(V4_otu_table, method = "bray")
+write.table(as.matrix(braydissim), "bray_ds_matrix_all.txt")
+
+V4mat <- read.table("bray_ds_matrix_all.txt")
+
+# convert to BC similarity
+V4mat_bc_sim <- 1-as.matrix(V4mat)
+V4mat_bc_sim
+
+# Calculate distance between sampling sites taken the Earth's curvature into account
+
+library(geosphere)
+
+V4geo <- select(V4_meta, "Long", "Lat")
+V4dist<-distm(V4geo, fun = distHaversine)
+rownames(V4dist)<-rownames(V4geo)
+colnames(V4dist)<-rownames(V4geo)
+
+# Dived to km
+V4dist <- V4dist/1000
+
+# Combine the matrices into a data frame
+data <- data.frame(Distance = as.vector(V4dist), Similarity = as.vector(V4mat_bc_sim))
+
+# Create the scatter plot
+DDR_pont <- ggplot(data, aes(x = Distance, y = Similarity)) +
+  geom_point(size = 3, fill = "darkgoldenrod2", shape = 21, , stroke = 1.2) +
+  labs(x = "Distance (× 1000 km)", y = "Bray-Curtis Similarity") +
+  geom_smooth(method = "lm", col = 'grey35', fill = NA, level = 0) +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    axis.text.x = element_text(hjust = 0.5, size = 18, colour = 'black'),
+    axis.text.y = element_text(size = 18, colour = 'black'),
+    axis.line = element_line(size = 0.5, colour = "black"),
+    legend.text = element_text(size = 18)
+  ) +
+  expand_limits(x = 0, y = 0) +
+  scale_x_continuous(breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
+                                11000, 12000, 13000, 14000, 15000), 
+                     labels = c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")) +
+  theme(legend.position = 'none')
+
+DDR_pont
+
+model <- lm(data$Similarity ~ data$Distance)
+model
+summary(model)
+
+# Mantel test for significance
+mantel_test<-mantel(V4mat_bc_sim, V4dist, method="pearson", permutations=999)
+
+mantel_test
+
+#Mantel correlog
+mantel_correlog<-mantel.correlog(V4mat_bc_sim, D.geo=V4dist, XY=NULL, n.class=0, break.pts=NULL, 
+                                 cutoff=F, r.type="pearson", nperm=999, mult="holm", progressive=TRUE)
+
+summary(mantel_correlog)
+mantel_correlog
+plot(mantel_correlog)
+
+# Create DDR for each ionic compsoition type
+
+soda_meta <- filter(V4_meta, type=="soda")
+soda_OTU <- V4_otu_table[rownames(V4_otu_table) %in% rownames(soda_meta), ]
+sodasaline_meta  <- filter(V4_meta, type=="soda-saline")
+sodasaline_OTU <- V4_otu_table[rownames(V4_otu_table) %in% rownames(sodasaline_meta), ]
+saline_meta  <- filter(V4_meta, type=="saline")
+saline_OTU <- V4_otu_table[rownames(V4_otu_table) %in% rownames(saline_meta), ]
+fresh_meta  <- filter(V4_meta, type=="freshwater")
+fresh_OTU <- V4_otu_table[rownames(V4_otu_table) %in% rownames(fresh_meta), ]
+
+
+# Calculating Bray-Curtis (BC) dissimilarity
+
+braydissim <- vegdist(soda_OTU, method = "bray")
+write.table(as.matrix(braydissim), "bray_ds_matrix_soda.txt")
+
+V4mat <- read.table("bray_ds_matrix_soda.txt")
+
+# convert to BC similarity
+V4mat_bc_sim <- 1-as.matrix(V4mat)
+V4mat_bc_sim
+
+# Calculate distance between sampling sites taken the Earth's curvature into account
+
+library(geosphere)
+
+soda_geo <- select(soda_meta, "Long", "Lat")
+soda_dist<-distm(soda_geo, fun = distHaversine)
+rownames(soda_dist)<-rownames(soda_geo)
+colnames(soda_dist)<-rownames(soda_geo)
+
+# Dived to km
+soda_dist <- soda_dist/1000
+
+# Combine the matrices into a data frame
+soda_data <- data.frame(Distance = as.vector(soda_dist), Similarity = as.vector(V4mat_bc_sim))
+
+# Create the scatter plot
+DDR_soda <- ggplot(soda_data, aes(x = Distance, y = Similarity)) +
+  geom_point(size = 3, fill = "#F8766D", shape = 21, , stroke = 1.2) +
+  labs(x = "Distance (× 1000 km)", y = "Bray-Curtis Similarity") +
+  geom_smooth(method = "lm", col = 'grey35', fill = NA, level = 0) +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    axis.text.x = element_text(hjust = 0.5, size = 18, colour = 'black'),
+    axis.text.y = element_text(size = 18, colour = 'black'),
+    axis.line = element_line(size = 0.5, colour = "black"),
+    legend.text = element_text(size = 18)
+  ) +
+  expand_limits(x = 0, y = 0) +
+  scale_x_continuous(breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
+                                11000, 12000, 13000, 14000, 15000), 
+                     labels = c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")) +
+  theme(legend.position = 'none')
+
+DDR_soda
+
+model <- lm(soda_data$Similarity ~ soda_data$Distance)
+model
+summary(model)
+
+# Mantel test for significance
+mantel_test<-mantel(V4mat_bc_sim, soda_dist, method="pearson", permutations=999)
+
+mantel_test
+
+#Mantel correlog
+mantel_correlog<-mantel.correlog(V4mat_bc_sim, D.geo=soda_dist, XY=NULL, n.class=0, break.pts=NULL, 
+                                 cutoff=F, r.type="pearson", nperm=999, mult="holm", progressive=TRUE)
+
+summary(mantel_correlog)
+mantel_correlog
+plot(mantel_correlog)
+
+
+```
