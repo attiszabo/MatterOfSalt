@@ -422,7 +422,7 @@ vif.cca(rdasionic) # no good
 rdasionic_corr <- rda(otu_hell_compl ~ Na + K + Ca + Cl + HCO3_CO3, data=ionic_compl)
 vif.cca(rdasionic_corr) # good
 
-#kirakom a Mg, SO4, HCO3.CO3-t
+#remove Mg, SO4, HCO3_CO3-t
 ionic_compl <- select(ionic_compl, "Na", "K", "Ca", "Cl", "HCO3_CO3")
 
 ### normalize and standardize variables
