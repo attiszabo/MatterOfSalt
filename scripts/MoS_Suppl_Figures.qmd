@@ -202,6 +202,135 @@ ggsave("SupplFig2.svg", ternary_grob, device = "svg", scale = 1.2, width = 210, 
 
 ### Supplementary Figure S3
 
+```{r collinearity environmental}
+
+## Collinearity: ion equivalent percentages and limnological variables
+# check the number of missing values for each parameter in metadata
+colSums(is.na(V4_meta))
+
+# instead of a table, visualize
+library(naniar)
+vis_miss(V4_meta)
+
+# Filter environmental parameters:
+V4_meta_env_filtered <- V4_meta %>%
+  select(-type, -Continent, -Site, -Lat, -Long, -SamplingDepth, -TOC)
+
+# Remove rows with NAs
+env_data <- na.omit(V4_meta_env_filtered)
+
+# Check the resulting dataset
+str(env_data)
+
+# Do the redundancy analysis
+rda_env <- rda(env_data ~ ., data = env_data)
+
+# Check Variance Inflation Factors (VIF)
+vif_values <- vif.cca(rda_env)
+print(vif_values) # should be less than 10
+
+# Convert VIF results to a data frame
+vif_table <- as.data.frame(vif_values)
+colnames(vif_table) <- "VIF_Values"
+
+# Print VIF results as a neat table
+
+custom_labels <- c(
+  "Na"         = "Na⁺",
+  "K"          = "K⁺",
+  "Ca"         = "Ca²⁺",
+  "Mg"         = "Mg²⁺",
+  "Cl"         = "Cl⁻",
+  "SO4"        = "SO₄²⁻",
+  "HCO3_CO3"   = "HCO₃⁻/CO₃²⁻",
+  "Salinity"   = "Salinity",
+  "pH"         = "pH",
+  "Depth"      = "Depth",
+  "Temperature"= "Temperature",
+  "DO"         = "DO",
+  "Chl.a"      = "Chl-a",
+  "DOC"        = "DOC"
+)
+
+# Replace row names using the custom_labels mapping, if available
+rownames(vif_table) <- sapply(rownames(vif_table), function(x) {
+  if (x %in% names(custom_labels)) custom_labels[x] else x
+})
+# Print VIF table
+knitr::kable(vif_table, digits = 3, caption = "Variance Inflation Factors (VIF) of Environmental Variables")
+
+## Visualize correlations
+
+# Define ionic and limnological (environmental) variable columns
+ion_cols <- c("Na", "K", "Ca", "Mg", "Cl", "SO4", "HCO3_CO3")
+limno_cols <- c("Salinity", "pH", "Depth", "Temperature", "DO", "Chl.a", "DOC")
+
+# Subset ionic and limnological variables
+ion_data <- env_data[, ion_cols]
+limno_data <- env_data[, limno_cols]
+
+# Compute correlation matrix for ionic vs. limnological variables
+corr_matrix <- cor(ion_data, limno_data, use = "pairwise.complete.obs")
+
+# Compute p-values matrix
+p_matrix <- matrix(NA, nrow = length(ion_cols), ncol = length(limno_cols))
+rownames(p_matrix) <- ion_cols
+colnames(p_matrix) <- limno_cols
+
+for (i in 1:length(ion_cols)) {
+  for (j in 1:length(limno_cols)) {
+    test <- cor.test(env_data[[ion_cols[i]]], env_data[[limno_cols[j]]], use = "pairwise.complete.obs", method = "pearson")
+    p_matrix[i, j] <- test$p.value
+  }
+}
+
+## Create custom label mappings for ions and limnological variables
+custom_labels_ion <- c(
+  "Na"         = "Na⁺",
+  "K"          = "K⁺",
+  "Ca"         = "Ca²⁺",
+  "Mg"         = "Mg²⁺",
+  "Cl"         = "Cl⁻",
+  "SO4"        = "SO₄²⁻",
+  "HCO3_CO3"   = "HCO₃⁻/CO₃²⁻"
+)
+
+custom_labels_limno <- c(
+  "Salinity"   = "Salinity",
+  "pH"         = "pH",
+  "Depth"      = "Depth",
+  "Temperature"= "Temperature",
+  "DO"         = "DO",
+  "Chl.a"      = "Chl-a",
+  "DOC"        = "DOC"
+)
+
+## Update the row and column names of the correlation and p-value matrices using the custom labels
+rownames(corr_matrix)[rownames(corr_matrix) %in% ion_cols] <- 
+  sapply(rownames(corr_matrix)[rownames(corr_matrix) %in% ion_cols], 
+         function(x) as.character(custom_labels_ion[[x]]))
+rownames(corr_matrix) <- sapply(rownames(corr_matrix), function(x) {
+  if (x %in% names(custom_labels_limno)) custom_labels_limno[x] else x
+})
+
+colnames(corr_matrix) <- sapply(colnames(corr_matrix), function(x) {
+  if (x %in% names(custom_labels_limno)) custom_labels_limno[x] else x
+})
+
+## Visualize correlations with significance, using numbers and custom labels
+corrplot(corr_matrix, 
+         method = "number",  # Display correlation coefficients as numbers
+         type = "full",      # Full matrix (ions vs. limnological variables)
+         p.mat = p_matrix, 
+         sig.level = 0.05, 
+         insig = "blank",    # Blank out non-significant correlations
+         tl.col = "black",   # Text labels in black
+         tl.srt = 45)        # Rotate labels for readability
+
+```
+
+### Supplementary Figure S4
+
 ```{r, relative ionic gradient}
 # Creating the NMDS as for Fig 1
 otu_mds <- metaMDS(V4_otu_table)
@@ -298,7 +427,7 @@ ion_e_nmds <- grid.arrange(nmds_v4_HCO3_CO3, nmds_v4_Cl, nmds_v4_SO4, nrow = 2)
 
 ```
 
-### Supplementary Figure S4
+### Supplementary Figure S5
 
 ```{r, NMDS ionic composition types}
 # Subset data based on ionic composition types
@@ -475,7 +604,7 @@ ggsave("SupplFig4.svg", ion_comp_type_sep_nmds, device = "svg", scale = 2, width
 
 ```
 
-### Supplementary Figure S5
+### Supplementary Figure S6
 
 ```{r, simper V3-V4}
 # filter meta for V3-V4
@@ -537,7 +666,7 @@ V3V4_NMDS <- ggplot(V3V4_data_scores, aes(x = NMDS1, y = NMDS2)) +
 V3V4_NMDS
 
 ```
-### Supplementary Figure S6
+### Supplementary Figure S7
 ### perform NMDS
 
 ```{r nmds}
@@ -570,6 +699,7 @@ plot(proc, kind = 2)
 protest(X = V4_otu_nmds_rot, Y = V3V4_otu_nmds_rot, scores = "sites", permutations = 999)
 
 ```
+### Supplementary Figure S8
 ### Evaluating Distance-decay relationships
 
 ``` {r DDR}
