@@ -16,6 +16,7 @@ format:
         code-fold: true
         theme: flatly
         embed-resources: true
+    gfm: default
 language:
   code-summary: Click to show code
 code-tools: true
@@ -27,14 +28,15 @@ warning: false
 ```{r import packages}
 # R version: 4.3.0
 # Libraries:
-library(tidyverse)    # 2.0.0, 
-                      # permute 0.9-7, lubridate	1.9.2, forcats	1.0.0, stringr	1.5.0, 
-                      # dplyr	1.1.2, purrr	1.0.1, readr	2.1.4, tidyr	1.3.0, tibble	3.2.1, 
-                      # ggplot2	3.4.2
-library(vegan)        # 2.6.4
-library(ggplot2)      # 3,4,2
-library(mapdata)      # 2.3.1
-library(ggtern)       # 3.4.2
+library(tidyverse) # 2.0.0,
+# permute 0.9-7, lubridate	1.9.2, forcats	1.0.0, stringr	1.5.0,
+# dplyr	1.1.2, purrr	1.0.1, readr	2.1.4, tidyr	1.3.0, tibble	3.2.1,
+# ggplot2	3.4.2
+library(vegan) # 2.6.4
+library(ggplot2) # 3.4.2
+library(mapdata) # 2.3.1
+library(ggtern) # 3.4.2
+library(ggvenn) # 0.1.10
 
 # Set seed
 seed <- 14560722
@@ -44,54 +46,98 @@ set.seed(seed)
 ### Import data
 ``` {r import data}
 # V4 OTUs
-otu_table <- read.table("../data/V4_otutable99.shared", header = TRUE, dec = ".", na.strings = "?",
-                        row.names = 2, sep ="\t") %>%
-              select(-label, -numOtus)
+otu_table <- read.table("data/V4_otutable99.shared",
+  header = TRUE, dec = ".", na.strings = "?",
+  row.names = 2, sep = "\t"
+) %>%
+  select(-label, -numOtus)
 
 # V4 metadata
-V4_meta <- read.csv("../data/V4_meta.csv", header = TRUE, na.strings = "?", row.names = 1,
-                   fileEncoding = "latin1")
+V4_meta <- read.csv("data/V4_meta.csv",
+  header = TRUE, na.strings = "?", row.names = 1,
+  fileEncoding = "latin1"
+)
 
 # exploring the data
 as_tibble(V4_meta)
-  table(V4_meta$type)
-  table(V4_meta$Continent)
+table(V4_meta$type)
+table(V4_meta$Continent)
 
 # adding colours to ionic composition types
-cols <- c("freshwater" = "#B6E665", 
-          "saline" = "#00BFC4",
-          "soda" ="#F8766D",
-          "soda-saline" = "#C77CFF")
+cols <- c(
+  "freshwater" = "#B6E665",
+  "saline" = "#00BFC4",
+  "soda" = "#F8766D",
+  "soda-saline" = "#C77CFF"
+)
 
 ```
 
-## Part A (Map of sample origin)
+## Figure 1
+### Part A (Map of sample origin)
 ```{r, world map}
 
 wd <- map_data("world")
 lakes <- map_data("lakes")
 
-world_map <- ggplot() + geom_polygon(data=wd, aes(x=long, y=lat, group=group), fill = "ivory1", color = "darkgrey") +
-  geom_polygon(data=lakes, aes(x=long, y=lat, group=group), fill = "skyblue2",) +
-  coord_fixed(1.3)+
+world_map <- ggplot() +
+  geom_polygon(data = wd, aes(x = long, y = lat, group = group), fill = "ivory1", color = "darkgrey") +
+  geom_polygon(data = lakes, aes(x = long, y = lat, group = group), fill = "skyblue2", ) +
+  coord_fixed(1.3) +
   theme_bw()
 
-A <- world_map + 
+A <- world_map +
   geom_point(data = V4_meta, aes(x = Long, y = Lat, fill = type), size = 3, shape = 21) +
-  scale_fill_manual(values = c("#7CAE00","#00BFC4","#F8766D","#C77CFF")) +
-  guides(fill="none") +
+  scale_fill_manual(values = c("#7CAE00", "#00BFC4", "#F8766D", "#C77CFF")) +
+  guides(fill = "none") +
   theme(
     axis.title = element_blank()
   )
 A
 
-ggsave("Fig1_A.png", A, device = "png", width = 280, height = 180, units = c("mm"),dpi = 400)
-ggsave("Fig1_A.svg", A, device = "svg", width = 280, height = 180, units = c("mm"),dpi = 400)
+ggsave("Fig1_A.png", A, device = "png", width = 280, height = 180, units = c("mm"), dpi = 400)
+ggsave("Fig1_A.svg", A, device = "svg", width = 280, height = 180, units = c("mm"), dpi = 400)
 
 ```
 
+## Part B, C (Ternary diagrams of ionic composition)
 
-## Part B (Ordination with salinity)
+```{r, ternary plots}
+# Adding Na+ and K+ together
+V4_meta$Na_K <- V4_meta$Na + V4_meta$K
+
+cation_tern <- ggtern(V4_meta, aes(Ca, Na_K, Mg)) +
+  geom_point(aes(fill = type, shape = Continent), size = 3, stroke = 1) +
+  scale_fill_manual(values = cols) +
+  scale_shape_manual(values = c(25, 24, 22, 21)) +
+  labs(
+    x = expression(paste("Ca"^"2+")),
+    y = expression(paste("Na"^"+" + "K"^"+")),
+    z = expression(paste("Mg"^"2+"))
+  ) +
+  guides(fill = "none", shape = "none") +
+  theme_bw()
+
+cation_tern
+
+anion_tern <- ggtern(V4_meta, aes(SO4, HCO3_CO3, Cl)) +
+  geom_point(aes(fill = type, shape = Continent), size = 3, stroke = 1) +
+  scale_fill_manual(values = cols) +
+  scale_shape_manual(values = c(25, 24, 22, 21)) +
+  labs(
+    x = expression(paste("SO"[4]^"2-")),
+    y = expression(paste("HCO"[3]^"-" + "CO"[3]^"2-")),
+    z = expression(paste("Cl"^"-"))
+  ) +
+  guides(fill = "none", shape = "none") +
+  theme_bw()
+
+anion_tern
+
+```
+
+## Figure 2
+### Part A (Ordination with salinity)
 
 ```{r, ordination with salinity}
 
@@ -102,15 +148,16 @@ stressplot(otu_mds)
 
 # very raw plotting
 plot(otu_mds)
-orditorp(otu_mds, display="sites", cex=1, air=0.01)
+orditorp(otu_mds, display = "sites", cex = 1, air = 0.01)
 
 # rotate the ordination with increasing salinity
 otu_mds_rot <- with(V4_meta, MDSrotate(otu_mds, Salinity, na.rm = T))
-plot(otu_mds_rot) +
-orditorp(otu_mds_rot,display="sites",cex=1,air=0.01)
+plot(otu_mds_rot)
+orditorp(otu_mds_rot, display = "sites", cex = 1, air = 0.01)
 
 # projecting salinity as a surface
-plot(otu_mds_rot) + ordisurf(otu_mds_rot ~ V4_meta$Salinity, add=TRUE)
+plot(otu_mds_rot)
+ordisurf(otu_mds_rot ~ V4_meta$Salinity, add = TRUE)
 
 # only salinity contours
 meta_sf <- ordisurf(otu_mds_rot ~ V4_meta$Salinity, plot = FALSE, scaling = 3, method = "REML")
@@ -121,33 +168,35 @@ plot(meta_sf)
 #### create a decent plot with ggplot2
 # export site coordinates
 data_scores <- as.data.frame(scores(otu_mds_rot, "sites"))
-data_scores$site <- rownames(otu_mds_rot)  
+data_scores$site <- rownames(otu_mds_rot)
 
-grp <-V4_meta$type
-cont<-V4_meta$Continent
+grp <- V4_meta$type
+cont <- V4_meta$Continent
 
 data_scores$grp <- grp
 data_scores$cont <- cont
 head(data_scores)
 
-V4_nmds <- ggplot(data_scores, aes(x = NMDS1, y = NMDS2)) + 
+V4_nmds <- ggplot(data_scores, aes(x = NMDS1, y = NMDS2)) +
   geom_point(aes(fill = V4_meta$type, shape = cont), size = 4, stroke = 1.2) +
   scale_fill_manual(values = cols) +
   scale_shape_manual(values = c(25, 24, 22, 21)) +
-  labs(fill = "Ionic composition type", shape="Continent") +
+  labs(fill = "Ionic composition type", shape = "Continent") +
   coord_equal() +
   theme_bw() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size=18),
-        axis.title.y = element_text(size=18),
-        panel.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.text = element_text(size=16),
-        legend.title = element_text(size=14),
-        plot.background = element_blank())
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    panel.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.text = element_text(size = 16),
+    legend.title = element_text(size = 14),
+    plot.background = element_blank()
+  )
 
 V4_nmds
 
@@ -165,195 +214,181 @@ contour_vals <- extract_xyz(obj = meta_sf)
 names(contour_vals)[c(1, 2)] <- c("NMDS1", "NMDS2")
 head(contour_vals)
 
-#plot with the NMDS
-salinity_surf <- ggplot(data = contour_vals, aes(x = NMDS1, y = NMDS2, z = z)) + geom_contour(aes(colour = "grey"), linewidth = 1, color = "grey") +
+# plot with the NMDS
+salinity_surf <- ggplot(data = contour_vals, aes(x = NMDS1, y = NMDS2, z = z)) +
+  geom_contour(aes(colour = "grey"), linewidth = 1, color = "grey") +
   theme_bw()
 salinity_surf
 
 # create a df for the contour labels
-labelz <- data.frame(x = c(-1.18, -0.74, -0.5, -0.03, 0.32, 0.63, 1.1, 1.35, 1.58, 1.75, 1.9, 2.05, 2.2, 2.24), y = c(-0.8, 0.75, 1.3, 1.57, 1.8, 1.9, 1.72, 1.65, 1.42, 1.28, 1.06, 0.94, 0.82, 0.19), z = NA, labels = c("0", "10", "20", "30", "40", "50", "60", "70",
-    "80", "90", "100", "110", "120", "130"))
+labelz <- data.frame(x = c(-1.18, -0.74, -0.5, -0.03, 0.32, 0.63, 1.1, 1.35, 1.58, 1.75, 1.9, 2.05, 2.2, 2.24), y = c(-0.8, 0.75, 1.3, 1.57, 1.8, 1.9, 1.72, 1.65, 1.42, 1.28, 1.06, 0.94, 0.82, 0.19), z = NA, labels = c(
+  "0", "10", "20", "30", "40", "50", "60", "70",
+  "80", "90", "100", "110", "120", "130"
+))
 
 salinity_surf + geom_text(data = labelz, aes(x = x, y = y, label = labels), colour = "grey", size = 3)
 
 
 data_scores$z <- NA
 
-B <- salinity_surf + 
-  geom_point(data = data_scores, aes(x = NMDS1, y = NMDS2, fill = V4_meta$type, shape = cont),
-             size = 4, stroke = 1.2) +
+B <- salinity_surf +
+  geom_point(
+    data = data_scores, aes(x = NMDS1, y = NMDS2, fill = V4_meta$type, shape = cont),
+    size = 4, stroke = 1.2
+  ) +
   geom_text(data = labelz, aes(x = x, y = y, label = labels), colour = "grey", size = 3) +
   scale_fill_manual(values = cols) +
   scale_shape_manual(values = c(25, 24, 22, 21)) +
   labs(fill = "Ionic composition type", shape = "Continent") +
-  guides(fill = "none", shape  = "none") +
+  guides(fill = "none", shape = "none") +
   coord_equal() +
   theme_bw() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 18),
-        axis.title.y = element_text(size = 18),
-        panel.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 14),
-        plot.background = element_blank())
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    panel.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.text = element_text(size = 16),
+    legend.title = element_text(size = 14),
+    plot.background = element_blank()
+  )
 
 B
 
-ggsave("Fig1_B.png", B, device = "png", dpi = 400)
-ggsave("Fig1_B.svg", B, device = "svg", dpi = 400)
+ggsave("Fig2_A.png", B, device = "png", dpi = 400)
+ggsave("Fig2_A.svg", B, device = "svg", dpi = 400)
 
 ```
 
 
-## Part C (Ordination with fitted environmental variables)
+### Part B (Ordination with fitted environmental variables)
 
 ```{r, ordination with envfit}
 # collecting the environmental parameters
-V4_env <- V4_meta[,2:17]
+V4_env <- V4_meta[, 2:17]
 
 # fitting environmental vectors to the ordination
 ef <- envfit(otu_mds_rot, V4_env, permutations = 1000, na.rm = T)
 ef
-plot(otu_mds_rot) + plot(ef)
+plot(otu_mds_rot)
+plot(ef)
 
 # extract vector data for ggplot (p < 0.01)
-vec_df<-as.data.frame(ef$vectors$arrows*sqrt(ef$vectors$r))
-vec_df$env<-rownames(vec_df)
+vec_df <- as.data.frame(ef$vectors$arrows * sqrt(ef$vectors$r))
+vec_df$env <- rownames(vec_df)
 
-vec_df <- cbind(ef$vectors$arrows*sqrt(ef$vectors$r),ef$vectors$pvals)
-vec_df_p <- as.data.frame(vec_df[vec_df[,3]<=0.01,])
-vec_df_p$env<-rownames(vec_df_p)
+vec_df <- cbind(ef$vectors$arrows * sqrt(ef$vectors$r), ef$vectors$pvals)
+vec_df_p <- as.data.frame(vec_df[vec_df[, 3] <= 0.01, ])
+vec_df_p$env <- rownames(vec_df_p)
 
-#remove TOC (overlaps with DOC)
-vec_df_p <- vec_df_p[1:12,]
+# remove TOC (overlaps with DOC)
+vec_df_p <- vec_df_p[1:12, ]
 
-nmds_v4_envfit<- ggplot(data_scores, aes(x = NMDS1, y = NMDS2)) + 
+nmds_v4_envfit <- ggplot(data_scores, aes(x = NMDS1, y = NMDS2)) +
   geom_point(aes(fill = V4_meta$type, shape = cont), alpha = 0.3, size = 4, stroke = 1.2) +
   scale_fill_manual(values = cols) +
   scale_shape_manual(values = c(25, 24, 22, 21)) +
-  labs(fill = "Ionic composition type", shape="Continent") +
-  guides(fill = "none", shape  = "none") +
+  labs(fill = "Ionic composition type", shape = "Continent") +
+  guides(fill = "none", shape = "none") +
   coord_equal() +
   theme_bw() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size=18),
-        axis.title.y = element_text(size=18),
-        panel.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.text = element_text(size=16),
-        legend.title = element_text(size=14),
-        plot.background = element_blank())
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    panel.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.text = element_text(size = 16),
+    legend.title = element_text(size = 14),
+    plot.background = element_blank()
+  )
 
 nmds_v4_envfit
 
-C <- nmds_v4_envfit + geom_segment(data = vec_df_p,aes(x = 0, xend = NMDS1*2, 
-                                                       y = 0, yend = NMDS2*2, colour = env),
-                                   arrow = arrow(length = unit(0.2, "cm")), size = 1.2) +
-  scale_colour_manual(values = c(Na = "#AA0000FF", K = "#AA0000FF", Ca = "#AA0000FF", 
-                                 Mg = "#AA0000FF", Cl = "#AA0000FF", SO4 = "#AA0000FF",
-                                 HCO3_CO3 = "#AA0000FF", pH = "#005544FF", Salinity = "#005544FF",
-                                 Depth = "#005544FF", Temperature = "#005544FF",
-                                 DOC = "#005544FF")) +
-  geom_text(data=vec_df_p,aes(x = NMDS1*2, y = NMDS2*2,label = env),size = 5, vjust = -0.5) +
-  guides(fill = "none", shape  = "none", colour = "none")
+V4_envfit <- nmds_v4_envfit + geom_segment(
+  data = vec_df_p, aes(
+    x = 0, xend = NMDS1 * 2,
+    y = 0, yend = NMDS2 * 2, colour = env
+  ),
+  arrow = arrow(length = unit(0.2, "cm")), size = 1.2
+) +
+  scale_colour_manual(values = c(
+    Na = "#AA0000FF", K = "#AA0000FF", Ca = "#AA0000FF",
+    Mg = "#AA0000FF", Cl = "#AA0000FF", SO4 = "#AA0000FF",
+    HCO3_CO3 = "#AA0000FF", pH = "#005544FF", Salinity = "#005544FF",
+    Depth = "#005544FF", Temperature = "#005544FF",
+    DOC = "#005544FF"
+  )) +
+  geom_text(data = vec_df_p, aes(x = NMDS1 * 2, y = NMDS2 * 2, label = env), size = 5, vjust = -0.5) +
+  guides(fill = "none", shape = "none", colour = "none")
 
-C
+V4_envfit
 
 ```
 
-## Part D (Ordination with SIMPER)
+### Part C (Ordination with SIMPER)
 
 ```{r, ordination with SIMPER}
 
-# perform a SIMPER test using PAST3
-# why PAST3
-# saving the otu_table for PAST
+# perform a SIMPER test using PAST3 using Bray-Curtis dissimilarities
+# vegan's simper function can only compare two groups
+# PAST GUI statistical tool https://www.nhm.uio.no/english/research/resources/past/
+# Past3.exe -> Import the otu_table, copy ionic composition type information as 'group'
+# Select all -> Multivariate -> Tests -> SIMPER -> Bray-Curtis distance
+# Export the results as tsv file and add taxa to OTUs contributing to top 20% of variance, creating a file "V4_simper20.txt"
 
 # export species coordinates
 species_scores <- as.data.frame(scores(otu_mds_rot, "species"))
 species_scores$species <- rownames(otu_mds_rot)
 
-taxa_otus<-read.table("V4_simper20.txt",header=TRUE, row.names=1,sep="\t")                                   
+taxa_otus <- read.table("data/V4_simper20.txt", header = TRUE, row.names = 1, sep = "\t")
 taxa <- taxa_otus$name
-species_scores$taxa  <- taxa
+species_scores$taxa <- taxa
 head(species_scores)
 
-V4_SIMPER_NMDS <- ggplot(data_scores, aes(x = NMDS1, y = NMDS2)) + 
-  geom_text(data=species_scores,aes(x=NMDS1,y=NMDS2,label=taxa),alpha=0.5, size = 5) +
+V4_SIMPER_NMDS <- ggplot(data_scores, aes(x = NMDS1, y = NMDS2)) +
+  geom_text(data = species_scores, aes(x = NMDS1, y = NMDS2, label = taxa), alpha = 0.5, size = 5) +
   geom_point(aes(fill = grp, shape = cont), size = 4, stroke = 1.2) +
   scale_fill_manual(values = cols) +
   scale_shape_manual(values = c(25, 24, 22, 21)) +
-  labs(fill = "Water ion composition", shape="Continent") +
+  labs(fill = "Water ion composition", shape = "Continent") +
   coord_equal() +
   theme_bw() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size=18),
-        axis.title.y = element_text(size=18),
-        panel.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.text = element_text(size=16),
-        legend.title = element_text(size=14),
-        plot.background = element_blank())
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    panel.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.text = element_text(size = 16),
+    legend.title = element_text(size = 14),
+    plot.background = element_blank()
+  )
 
 V4_SIMPER_NMDS
 
 
 ```
 
-## Part E, F (Ternary diagrams of ionic composition)
-
-```{r, ternary plots}
-# Adding Na+ and K+ together
-V4_meta$Na_K <- V4_meta$Na + V4_meta$K
-
-E <- ggtern(V4_meta, aes(Ca, Na_K, Mg)) +
-    geom_point(aes(fill = type, shape = Continent), size = 3, stroke = 1) +
-  scale_fill_manual(values = cols) +
-  scale_shape_manual(values = c(25, 24, 22, 21)) +
-  labs(
-       x = expression(paste("Ca"^"2+")), 
-       y = expression(paste("Na"^"+" + "K"^"+")), 
-       z = expression(paste("Mg"^"2+"))) +
-  guides(fill = "none", shape  = "none") +
-  theme_bw()
-
-E
-
-F <- ggtern(V4_meta, aes(SO4, HCO3_CO3, Cl)) +
-  geom_point(aes(fill = type, shape = Continent), size = 3, stroke = 1) +
-  scale_fill_manual(values = cols) +
-  scale_shape_manual(values = c(25, 24, 22, 21)) +
-  labs(
-       x = expression(paste("SO"[4]^"2-")), 
-       y = expression(paste("HCO"[3]^"-" + "CO"[3]^"2-")),
-       z = expression(paste("Cl"^ "-"))) +
-  guides(fill = "none", shape  = "none") +
-  theme_bw()
-
-F
-
-```
-
-
-
-## Part G (Variance assessment with PERMANOVA test)
+## Figure 3
+### Part A (Variance assessment with PERMANOVA test)
 
 ```{r, PERMANOVA}
 
 # Three-Way PERMANOVA
 
-V4_meta_sal <- V4_meta %>% 
-               filter(!is.na(Salinity))
+V4_meta_sal <- V4_meta %>%
+  filter(!is.na(Salinity))
 otu_table_sal <- otu_table[rownames(otu_table) %in% rownames(V4_meta_sal), ]
 
 permanova_result <- adonis2(otu_table_sal ~ type * Site * Salinity, data = V4_meta_sal)
@@ -369,14 +404,15 @@ C <- c("0.109", "0.033", "0.027", "0.0331")
 
 venn_perm_res <- list("Salinity" = A, "Ionic composition type" = B, "Geographic region" = C)
 
-library(ggvenn)
-G <- ggvenn(venn_perm_res, show_elements = T, label_sep = "\n", stroke_size = 0.5, 
-            fill_color = c("seagreen3", "tomato", "dodgerblue"))
+G <- ggvenn(venn_perm_res,
+  show_elements = T, label_sep = "\n", stroke_size = 0.5,
+  fill_color = c("seagreen3", "tomato", "dodgerblue")
+)
 G
 
 ```
 
-## Part H (Variance partitioning)
+### Part B (Variance partitioning)
 
 ```{r, varpart}
 
@@ -384,24 +420,16 @@ G
 otu_hell <- decostand(otu_table, "hellinger")
 
 # check available environmental data
-sum(is.na(V4_meta$Salinity))
-sum(is.na(V4_meta$pH))
-sum(is.na(V4_meta$SamplingDepth))
-sum(is.na(V4_meta$Depth))
-sum(is.na(V4_meta$Temp))
-sum(is.na(V4_meta$DO))
-sum(is.na(V4_meta$Chl.a))
-sum(is.na(V4_meta$DOC))
-sum(is.na(V4_meta$TOC))
+colSums(is.na(V4_meta))
 
 # create explanatory tables
-env <- select(V4_meta, "Salinity", "pH","SamplingDepth")
+env <- select(V4_meta, "Salinity", "pH", "SamplingDepth")
 ionic <- select(V4_meta, "Na", "K", "Ca", "Mg", "Cl", "SO4", "HCO3_CO3")
 geo <- select(V4_meta, "Long", "Lat")
 
-#checking if they have a same number of rows
+# checking if they have a same number of rows
 nrow(otu_hell) & nrow(env) & nrow(ionic) & nrow(geo)
-all.equal(rownames(otu_hell), rownames(env), rownames(ionic), rownames (geo))
+all.equal(rownames(otu_hell), rownames(env), rownames(ionic), rownames(geo))
 
 # removing samples with NAs
 ionic_compl <- na.omit(ionic)
@@ -413,16 +441,16 @@ otu_hell_compl <- otu_hell[rownames(otu_hell) %in% rownames(ionic_compl), ]
 geo_compl <- geo[rownames(geo) %in% rownames(ionic_compl), ]
 
 # check for collinearity
-rdasenv <- rda(otu_hell_compl ~ Salinity + pH + SamplingDepth, data=env_compl)
+rdasenv <- rda(otu_hell_compl ~ Salinity + pH + SamplingDepth, data = env_compl)
 vif.cca(rdasenv) # should be less than 10
 
-rdasionic <- rda(otu_hell_compl ~ Na + K + Ca + Mg + Cl + SO4 + HCO3_CO3, data=ionic_compl)
+rdasionic <- rda(otu_hell_compl ~ Na + K + Ca + Mg + Cl + SO4 + HCO3_CO3, data = ionic_compl)
 vif.cca(rdasionic) # no good
 
-rdasionic_corr <- rda(otu_hell_compl ~ Na + K + Ca + Cl + HCO3_CO3, data=ionic_compl)
+rdasionic_corr <- rda(otu_hell_compl ~ Na + K + Ca + Cl + HCO3_CO3, data = ionic_compl)
 vif.cca(rdasionic_corr) # good
 
-#remove Mg, SO4, HCO3_CO3-t
+# remove Mg, SO4, HCO3_CO3-t
 ionic_compl <- select(ionic_compl, "Na", "K", "Ca", "Cl", "HCO3_CO3")
 
 ### normalize and standardize variables
@@ -450,12 +478,12 @@ plot(density(norm_Salinity))
 norm_pH <- log(env_compl$pH + 1)
 plot(density(norm_pH))
 
-norm_SamplingDepth <- 1/env_compl$SamplingDepth
+norm_SamplingDepth <- 1 / env_compl$SamplingDepth
 plot(density(norm_SamplingDepth))
 
-env_compl$Salinity<-norm_Salinity
-env_compl$pH<-norm_pH
-env_compl$SamplingDepth<-norm_SamplingDepth
+env_compl$Salinity <- norm_Salinity
+env_compl$pH <- norm_pH
+env_compl$SamplingDepth <- norm_SamplingDepth
 
 env_compl_norm_shapiro <- lapply(env_compl, shapiro.test)
 env_compl_norm_shapiro_df <- data.frame(
@@ -466,19 +494,13 @@ env_compl_norm_shapiro_df <- data.frame(
 )
 print(env_compl_norm_shapiro_df)
 
-## standardize 
-# define a function to calculate Z-scores
-zscore <- function(x) {return((x - mean(x)) / sd(x))}
-
-env_compl$Salinity<-zscore(env_compl$Salinity)
-env_compl$pH<-zscore(env_compl$pH)
-env_compl$SamplingDepth<-zscore(env_compl$SamplingDepth) #produces NaNs somehow
+## standardize
+env_compl <- decostand(env_compl, method = "standardize")
 
 ## environmental selection
-
 rda1_env <- rda(otu_hell_compl ~ 1, env_compl)
 rda2_env <- rda(otu_hell_compl ~ ., env_compl)
-step.both <- ordistep(rda1_env, scope=formula(rda2_env), direction="both", perm.max=200, pstep=999)
+step.both <- ordistep(rda1_env, scope = formula(rda2_env), direction = "both", perm.max = 200, pstep = 999)
 
 ### ionic equilvalent percentage selection
 ## check for normality
@@ -509,7 +531,7 @@ plot(density(norm_Ca))
 norm_Cl <- sqrt(ionic_compl$Cl)
 plot(density(norm_Cl))
 
-norm_HCO3_CO3<-log(ionic_compl$HCO3_CO3 + 1)
+norm_HCO3_CO3 <- log(ionic_compl$HCO3_CO3 + 1)
 plot(density(norm_HCO3_CO3))
 
 ionic_compl$Na <- norm_Na
@@ -528,20 +550,18 @@ ionic_compl_norm_shapiro_df <- data.frame(
 print(ionic_compl_norm_shapiro_df)
 
 ## standardize
-ionic_compl$Na <- zscore(ionic_compl$Na)
-ionic_compl$K <- zscore(ionic_compl$K)
-ionic_compl$Ca <- zscore(ionic_compl$Ca)
-ionic_compl$Cl <- zscore(ionic_compl$Cl)
-ionic_compl$HCO3_CO3<-zscore(ionic_compl$HCO3_CO3)
+ionic_compl <- decostand(ionic_compl, method = "standardize")
 
-#ion selection
+# ion selection
 rda1_ionic <- rda(otu_hell_compl ~ 1, ionic_compl)
 rda2_ionic <- rda(otu_hell_compl ~ ., ionic_compl)
-step.both <- ordistep(rda1_ionic, scope=formula(rda2_ionic), direction="both",
-                      perm.max=200, pstep=999)
+step.both <- ordistep(rda1_ionic,
+  scope = formula(rda2_ionic), direction = "both",
+  perm.max = 200, pstep = 999
+)
 
 ### calculate spatial eigenvectors using  calculate Moran's Eigenvector Maps (MEMs)
-# retain only the positive MEMs for use in a variance partitioning analysis in R 
+# retain only the positive MEMs for use in a variance partitioning analysis in R
 # Based on Pierre Legendre, Practicals using the R statistical language, Dec 2020
 
 library(ade4)
@@ -549,35 +569,35 @@ library(adegraphics)
 library(adespatial)
 
 # Plot a rough map of the sampling points
-plot(geo_compl, asp=1) +
-text(geo_compl, labels=rownames(geo_compl), pos=3)
+plot(geo_compl, asp = 1)
+text(geo_compl, labels = rownames(geo_compl), pos = 3)
 
 # Construct the dbMEM eigenfunctions
-geo_dbmem = dbmem(geo_compl, silent=FALSE) # Note the truncation value
+geo_dbmem <- dbmem(geo_compl, silent = FALSE) # Note the truncation value
 summary(geo_dbmem)
 attributes(geo_dbmem)$values # positive eigenvalues
 
 # Stepwise selection
 rda1_geo <- rda(otu_hell_compl ~ 1, geo_dbmem)
 rda2_geo <- rda(otu_hell_compl ~ ., geo_dbmem)
-step.both <- ordistep(rda1_geo, scope=formula(rda2_geo), direction="both", perm.max=200, pstep=999)
+step.both <- ordistep(rda1_geo, scope = formula(rda2_geo), direction = "both", perm.max = 200, pstep = 999)
 
 # Get the dbMEM eigenvectors modelling positive spatial correlation
-geo_mem = as.matrix(geo_dbmem)
-dim(geo_mem) 
+geo_mem <- as.matrix(geo_dbmem)
+dim(geo_mem)
 s.label(geo_compl, nb = attr(geo_dbmem, "listw"))
-s.value(geo_compl, geo_dbmem[,1:3])
+s.value(geo_compl, geo_dbmem[, 1:3])
 
 # Compute and test the Moran’s I values associated with the dbMEM eigenfunctions
 # One can check that the eigenvalues are perfectly proportional to Moran’s I
 
-( test <- moran.randtest(geo_dbmem, nrepet = 999) )
+(test <- moran.randtest(geo_dbmem, nrepet = 999))
 plot(test$obs, attr(geo_dbmem, "values"), xlab = "Moran's I", ylab = "Eigenvalues")
 
 
 # Now, you have the positive MEMs in the positive_mems object, and you can use these spatial variables in your variance partitioning analysis or other spatial analyses as needed.
 
-####varpart####
+#### varpart####
 
 varpart_result <- varpart(otu_hell_compl, env_compl, ionic_compl, geo_mem)
 varpart_result
@@ -586,10 +606,11 @@ summary(varpart_result)
 varpart_result$part
 
 plot(varpart_result,
-     Xnames = c("Environmental", "Chemical type", "Spatial"), # name the partitions
-     bg = c("seagreen3", "tomato", "dodgerblue"), alpha = 80, # colour the circles
-     digits = 2, # only show 2 digits
-     cex = 1.5)
+  Xnames = c("Environmental", "Chemical type", "Spatial"), # name the partitions
+  bg = c("seagreen3", "tomato", "dodgerblue"), alpha = 80, # colour the circles
+  digits = 2, # only show 2 digits
+  cex = 1.5
+)
 
 varpart_result2 <- varpart(otu_hell_compl, env_compl, ionic_compl)
 varpart_result2
@@ -598,20 +619,21 @@ summary(varpart_result2)
 varpart_result2$part
 
 plot(varpart_result2,
-     Xnames = c("Environmental", "Chemical type", "Spatial"), # name the partitions
-     bg = c("seagreen3", "tomato", "dodgerblue"), alpha = 80, # colour the circles
-     digits = 2, # only show 2 digits
-     cex = 1.5)
+  Xnames = c("Environmental", "Chemical type", "Spatial"), # name the partitions
+  bg = c("seagreen3", "tomato", "dodgerblue"), alpha = 80, # colour the circles
+  digits = 2, # only show 2 digits
+  cex = 1.5
+)
 
 
-#significance testing
-anova.cca(rda(otu_hell_compl, env_compl), step=1000)
-anova.cca(rda(otu_hell_compl, ionic_compl), step=1000)
-anova.cca(rda(otu_hell_compl, geo_mem), step=1000)
+# significance testing
+anova.cca(rda(otu_hell_compl, env_compl), step = 1000)
+anova.cca(rda(otu_hell_compl, ionic_compl), step = 1000)
+anova.cca(rda(otu_hell_compl, geo_mem), step = 1000)
 
-anova.cca(rda(otu_hell_compl, env_compl, ionic_compl), step=1000)
-anova.cca(rda(otu_hell_compl, ionic_compl, geo_mem), step=1000)
-anova.cca(rda(otu_hell_compl, geo_mem, env_compl), step=1000)
+anova.cca(rda(otu_hell_compl, env_compl, ionic_compl), step = 1000)
+anova.cca(rda(otu_hell_compl, ionic_compl, geo_mem), step = 1000)
+anova.cca(rda(otu_hell_compl, geo_mem, env_compl), step = 1000)
 
 
 ```
