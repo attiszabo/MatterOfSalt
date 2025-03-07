@@ -16,6 +16,7 @@ format:
         code-fold: true
         theme: flatly
         embed-resources: true
+    gfm: default
 language:
   code-summary: Click to show code
 code-tools: true
@@ -32,9 +33,10 @@ library(tidyverse) # 2.0.0,
 # dplyr	1.1.2, purrr	1.0.1, readr	2.1.4, tidyr	1.3.0, tibble	3.2.1,
 # ggplot2	3.4.2
 library(vegan) # 2.6.4
-library(ggplot2) # 3,4,2
+library(ggplot2) # 3.4.2
 library(mapdata) # 2.3.1
 library(ggtern) # 3.4.2
+library(ggvenn) # 0.1.10
 
 # Set seed
 seed <- 14560722
@@ -71,7 +73,8 @@ cols <- c(
 
 ```
 
-## Part A (Map of sample origin)
+## Figure 1
+### Part A (Map of sample origin)
 ```{r, world map}
 
 wd <- map_data("world")
@@ -97,8 +100,44 @@ ggsave("Fig1_A.svg", A, device = "svg", width = 280, height = 180, units = c("mm
 
 ```
 
+## Part B, C (Ternary diagrams of ionic composition)
 
-## Part B (Ordination with salinity)
+```{r, ternary plots}
+# Adding Na+ and K+ together
+V4_meta$Na_K <- V4_meta$Na + V4_meta$K
+
+cation_tern <- ggtern(V4_meta, aes(Ca, Na_K, Mg)) +
+  geom_point(aes(fill = type, shape = Continent), size = 3, stroke = 1) +
+  scale_fill_manual(values = cols) +
+  scale_shape_manual(values = c(25, 24, 22, 21)) +
+  labs(
+    x = expression(paste("Ca"^"2+")),
+    y = expression(paste("Na"^"+" + "K"^"+")),
+    z = expression(paste("Mg"^"2+"))
+  ) +
+  guides(fill = "none", shape = "none") +
+  theme_bw()
+
+cation_tern
+
+anion_tern <- ggtern(V4_meta, aes(SO4, HCO3_CO3, Cl)) +
+  geom_point(aes(fill = type, shape = Continent), size = 3, stroke = 1) +
+  scale_fill_manual(values = cols) +
+  scale_shape_manual(values = c(25, 24, 22, 21)) +
+  labs(
+    x = expression(paste("SO"[4]^"2-")),
+    y = expression(paste("HCO"[3]^"-" + "CO"[3]^"2-")),
+    z = expression(paste("Cl"^"-"))
+  ) +
+  guides(fill = "none", shape = "none") +
+  theme_bw()
+
+anion_tern
+
+```
+
+## Figure 2
+### Part A (Ordination with salinity)
 
 ```{r, ordination with salinity}
 
@@ -220,13 +259,13 @@ B <- salinity_surf +
 
 B
 
-ggsave("Fig1_B.png", B, device = "png", dpi = 400)
-ggsave("Fig1_B.svg", B, device = "svg", dpi = 400)
+ggsave("Fig2_A.png", B, device = "png", dpi = 400)
+ggsave("Fig2_A.svg", B, device = "svg", dpi = 400)
 
 ```
 
 
-## Part C (Ordination with fitted environmental variables)
+### Part B (Ordination with fitted environmental variables)
 
 ```{r, ordination with envfit}
 # collecting the environmental parameters
@@ -273,12 +312,12 @@ nmds_v4_envfit <- ggplot(data_scores, aes(x = NMDS1, y = NMDS2)) +
 
 nmds_v4_envfit
 
-C <- nmds_v4_envfit + geom_segment(
+V4_envfit <- nmds_v4_envfit + geom_segment(
   data = vec_df_p, aes(
     x = 0, xend = NMDS1 * 2,
     y = 0, yend = NMDS2 * 2, colour = env
   ),
-  arrow = arrow(length = unit(0.2, "cm")), linewidth = 1.2
+  arrow = arrow(length = unit(0.2, "cm")), size = 1.2
 ) +
   scale_colour_manual(values = c(
     Na = "#AA0000FF", K = "#AA0000FF", Ca = "#AA0000FF",
@@ -290,17 +329,20 @@ C <- nmds_v4_envfit + geom_segment(
   geom_text(data = vec_df_p, aes(x = NMDS1 * 2, y = NMDS2 * 2, label = env), size = 5, vjust = -0.5) +
   guides(fill = "none", shape = "none", colour = "none")
 
-C
+V4_envfit
 
 ```
 
-## Part D (Ordination with SIMPER)
+### Part C (Ordination with SIMPER)
 
 ```{r, ordination with SIMPER}
 
-# perform a SIMPER test using PAST3
-# why PAST3
-# saving the otu_table for PAST
+# perform a SIMPER test using PAST3 using Bray-Curtis dissimilarities
+# vegan's simper function can only compare two groups
+# PAST GUI statistical tool https://www.nhm.uio.no/english/research/resources/past/
+# Past3.exe -> Import the otu_table, copy ionic composition type information as 'group'
+# Select all -> Multivariate -> Tests -> SIMPER -> Bray-Curtis distance
+# Export the results as tsv file and add taxa to OTUs contributing to top 20% of variance, creating a file "V4_simper20.txt"
 
 # export species coordinates
 species_scores <- as.data.frame(scores(otu_mds_rot, "species"))
@@ -338,45 +380,8 @@ V4_SIMPER_NMDS
 
 ```
 
-## Part E, F (Ternary diagrams of ionic composition)
-
-```{r, ternary plots}
-# Adding Na+ and K+ together
-V4_meta$Na_K <- V4_meta$Na + V4_meta$K
-
-E <- ggtern(V4_meta, aes(Ca, Na_K, Mg)) +
-  geom_point(aes(fill = type, shape = Continent), size = 3, stroke = 1) +
-  scale_fill_manual(values = cols) +
-  scale_shape_manual(values = c(25, 24, 22, 21)) +
-  labs(
-    x = expression(paste("Ca"^"2+")),
-    y = expression(paste("Na"^"+" + "K"^"+")),
-    z = expression(paste("Mg"^"2+"))
-  ) +
-  guides(fill = "none", shape = "none") +
-  theme_bw()
-
-E
-
-F <- ggtern(V4_meta, aes(SO4, HCO3_CO3, Cl)) +
-  geom_point(aes(fill = type, shape = Continent), size = 3, stroke = 1) +
-  scale_fill_manual(values = cols) +
-  scale_shape_manual(values = c(25, 24, 22, 21)) +
-  labs(
-    x = expression(paste("SO"[4]^"2-")),
-    y = expression(paste("HCO"[3]^"-" + "CO"[3]^"2-")),
-    z = expression(paste("Cl"^"-"))
-  ) +
-  guides(fill = "none", shape = "none") +
-  theme_bw()
-
-F
-
-```
-
-
-
-## Part G (Variance assessment with PERMANOVA test)
+## Figure 3
+### Part A (Variance assessment with PERMANOVA test)
 
 ```{r, PERMANOVA}
 
@@ -399,7 +404,7 @@ C <- c("0.109", "0.033", "0.027", "0.0331")
 
 venn_perm_res <- list("Salinity" = A, "Ionic composition type" = B, "Geographic region" = C)
 
-G <- ggvenn::ggvenn(venn_perm_res,
+G <- ggvenn(venn_perm_res,
   show_elements = T, label_sep = "\n", stroke_size = 0.5,
   fill_color = c("seagreen3", "tomato", "dodgerblue")
 )
@@ -407,7 +412,7 @@ G
 
 ```
 
-## Part H (Variance partitioning)
+### Part B (Variance partitioning)
 
 ```{r, varpart}
 
@@ -415,15 +420,7 @@ G
 otu_hell <- decostand(otu_table, "hellinger")
 
 # check available environmental data
-sum(is.na(V4_meta$Salinity))
-sum(is.na(V4_meta$pH))
-sum(is.na(V4_meta$SamplingDepth))
-sum(is.na(V4_meta$Depth))
-sum(is.na(V4_meta$Temp))
-sum(is.na(V4_meta$DO))
-sum(is.na(V4_meta$Chl.a))
-sum(is.na(V4_meta$DOC))
-sum(is.na(V4_meta$TOC))
+colSums(is.na(V4_meta))
 
 # create explanatory tables
 env <- select(V4_meta, "Salinity", "pH", "SamplingDepth")
