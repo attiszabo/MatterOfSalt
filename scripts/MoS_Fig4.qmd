@@ -156,7 +156,7 @@ inditree <- read.tree("../data/otu.rep.mod.pick.tre")
 
 # visualize with ggtree
 
-q <- ggtree(inditree, layout = "radial")
+q <- ggtree(inditree, layout = "radial", size = 0.15)
 q
 
 # mapping node numbers
@@ -180,10 +180,9 @@ inner_nodes <- data.frame(node=c(675, 794, 906, 767, 838, 507, 543, 653),
                           lineage=c("betI", "Frankiales", "Verrucomicrobiales", "Gemmatimonadota",
                                     "Nitriliruptorales", "Cytophagales", "Flavobacteriaceae", "Enterobacterales"))
 
-phyl_cols <- c("Cyanobacteriota" = "paleturquoise1", "Actinomycetota" = "coral1", 
-               "Bacteroidota" = "olivedrab3", "Pseudomonadota" = "dodgerblue3",
-               "Gemmatimonadota" = "darkgoldenrod2",  "Verrucomicrobiota" = "deepskyblue",
-               "Planctomycetota" = "yellow3", "Patescibacteria" = "hotpink4")
+phyl_cols <- c("Cyanobacteriota" = "#7AD151", "Actinomycetota" = "#F9844A", "Bacteroidota"   = "#22A884",
+            "Pseudomonadota" = "#2B83BA", "Gemmatimonadota"= "#D9BF01", "Verrucomicrobiota" = "#8E44AD", 
+            "Planctomycetota"  = "#F9C74F",  "Patescibacteria"  = "#D62780")
 
 # colour the tree
 
