@@ -28,15 +28,22 @@ warning: false
 ```{r import packages}
 # R version: 4.3.0
 # Libraries:
-library(tidyverse) # 2.0.0,
-# permute 0.9-7, lubridate	1.9.2, forcats	1.0.0, stringr	1.5.0,
-# dplyr	1.1.2, purrr	1.0.1, readr	2.1.4, tidyr	1.3.0, tibble	3.2.1,
-# ggplot2	3.4.2
-library(vegan) # 2.6.4
-library(ggplot2) # 3.4.2
-library(mapdata) # 2.3.1
-library(ggtern) # 3.4.2
-library(ggvenn) # 0.1.10
+library(tidyverse)    # 2.0.0,
+                      # permute 0.9-7, lubridate	1.9.2, forcats	1.0.0, stringr	1.5.0,
+                      # dplyr	1.1.2, purrr	1.0.1, readr	2.1.4, tidyr	1.3.0, tibble	3.2.1,
+                      # ggplot2	3.4.2
+library(vegan)        # 2.6.4
+library(ggplot2)      # 3.4.2
+
+# Figure 1
+library(mapdata)      # 2.3.1
+library(ggtern)       # 3.4.2
+
+# Figure 3
+library(ggvenn)       # 0.1.10
+library(ade4)         # 1.7.22
+library(adegraphics)  # 1.0.18
+library(adespatial)   # 0.3.21
 
 # Set seed
 seed <- 14560722
@@ -563,10 +570,6 @@ step.both <- ordistep(rda1_ionic,
 ### calculate spatial eigenvectors using  calculate Moran's Eigenvector Maps (MEMs)
 # retain only the positive MEMs for use in a variance partitioning analysis in R
 # Based on Pierre Legendre, Practicals using the R statistical language, Dec 2020
-
-library(ade4)
-library(adegraphics)
-library(adespatial)
 
 # Plot a rough map of the sampling points
 plot(geo_compl, asp = 1)
