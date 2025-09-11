@@ -45,14 +45,15 @@ trim.seqs(fasta=current, name=current, oligos=run_name_barcodes_341F_785R.oligos
   #run_name_barcodes_515F_806R.oligos used for the V4 dataset, run_name_barcodes_341F_805R.oligos for the V3-V4 dataset
 ```
 
-*oligos file*(https://mothur.org/wiki/oligos_file/):\
-barcode   *SAMPLE1_BARCODE*   SAMPLE1\
-barcode   *SAMPLE2_BARCODE*   SAMPLE2\
-barcode   *SAMPLE3_BARCODE*   SAMPLE3\
-forward   CCTACGGGNGGCWGCAG   341F\
-reverse   GACTACHVGGGTATCTAATCC  785R\
-forward   GTGNCAGCNGCCGCGGTAA   515F\
-reverse   GGACTACNNGGGTNTCTAAT    805R\
+*oligos file*(https://mothur.org/wiki/oligos_file/):  
+  
+barcode   *SAMPLE1_BARCODE*   SAMPLE1  
+barcode   *SAMPLE2_BARCODE*   SAMPLE2  
+barcode   *SAMPLE3_BARCODE*   SAMPLE3  
+forward   CCTACGGGNGGCWGCAG   341F  
+reverse   GACTACHVGGGTATCTAATCC  785R  
+forward   GTGNCAGCNGCCGCGGTAA   515F  
+reverse   GGACTACNNGGGTNTCTAAT    805R  
 
 
 
@@ -180,7 +181,7 @@ summary.seqs(fasta=current, count=current)
 
 #### For the V4 dataset
 
-Ahead of merging, the MEGA software was used to trim the 341-533 region from the pre-aligned V3-V4 dataset, ensuring compatibility with the V4 dataset.
+Ahead of merging, all datasets were aligned in MEGA (v6/11), and overhanging positions were truncated to retain only the V4 region, ensuring compatibility with the V4 dataset.
 
 ```{bash}
 merge.files(input=V3V4_533F_trim.fasta-V4.project_name1.fasta-V4.project_name2.fasta…V4.project_namen.fasta, output=V4.fasta)
