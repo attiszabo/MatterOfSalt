@@ -53,14 +53,14 @@ set.seed(seed)
 ### Import data
 ``` {r import data}
 # V4 OTUs
-otu_table <- read.table("data/V4_otutable99.shared",
+otu_table <- read.table("../data/V4_otutable99.shared",
   header = TRUE, dec = ".", na.strings = "?",
   row.names = 2, sep = "\t"
 ) %>%
   select(-label, -numOtus)
 
 # V4 metadata
-V4_meta <- read.csv("data/V4_meta.csv",
+V4_meta <- read.csv("../data/V4_meta.csv",
   header = TRUE, na.strings = "?", row.names = 1,
   fileEncoding = "latin1"
 )

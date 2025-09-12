@@ -27,12 +27,21 @@ warning: false
 ```{r import packages}
 # R version: 4.3.0
 # Libraries:
+library(ggplot2)      # 3.4.2
+library(ggrepel)      # 0.9.6
+library(gridExtra)    # 2.3
 library(tidyverse)    # 2.0.0, 
                       # permute 0.9-7, lubridate	1.9.2, forcats	1.0.0, stringr	1.5.0, 
                       # dplyr	1.1.2, purrr	1.0.1, readr	2.1.4, tidyr	1.3.0, tibble	3.2.1, 
                       # ggplot2	3.4.2
-library(vegan)        # 2.6.4
+library(vegan)        # 2.6-4
+
+# Fig S3
 library(ggtern)       # 3.4.2
+# Fig S4
+library(corrplot)     # 0.92
+# Fig S8
+library(geosphere)    # 1.5.18
 
 # Set seed
 seed <- 14560722
@@ -48,7 +57,7 @@ V4_otu_table <- read.table("../data/V4_otutable99.shared", header = TRUE, dec = 
               select(-label, -numOtus)
 
 # V4 metadata
-V4_meta <- read.csv("../data/v4_v9_meta.csv", header = TRUE, na.strings = "?", row.names = 1,
+V4_meta <- read.csv("../data/v4_meta.csv", header = TRUE, na.strings = "?", row.names = 1,
                    fileEncoding = "latin1")
 
 as_tibble(V4_meta)
@@ -65,12 +74,121 @@ cols <- c("freshwater" = "#B6E665",
           "soda-saline" = "#C77CFF")
 
 ```
-### Supplementary Figure S1. Detalied maps of the sampling sites
+### Supporting Information Figure S1. Detalied maps of the sampling sites
 
 These maps were created using the QGIS software v3.28.6. The base map used is Esri.WorldTopoMap, sourced from Esri (https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}).
 
+### Supporting Information Figure S2
 
-### Supplementary Figure S2
+```{r salt content categories}
+# Saccó et al. 2021 classification
+sacco_class <- V4_meta %>%
+  transmute(Source = "Saccó et al. 2021 (samples)",
+            Category = case_when(
+              Salinity < 1 ~ "freshwater (< 1 g/L)",
+              Salinity >= 1 & Salinity < 3 ~ "moderately saline (1-3 g/L)",
+              Salinity >= 3 & Salinity < 10 ~ "brackish (3-10 g/L)",
+              Salinity >= 10 & Salinity < 35 ~ "saline (10-35 g/L)",
+              Salinity >= 35 ~ "hypersaline (> 35 g/L)",
+              TRUE ~ "not determined"
+            )) %>%
+  count(Source, Category, name = "Count")
+
+# Hammer 1986 classification
+hammer_class <- V4_meta %>%
+  transmute(Source = "Hammer 1986 (samples)",
+            Category = case_when(
+              Salinity < 0.5 ~ "freshwater (<0.5 g/L)",
+              Salinity >= 0.5 & Salinity < 3 ~ "subsaline (0.5-3 g/L)",
+              Salinity >= 3 & Salinity < 20 ~ "hyposaline (3-20 g/L)",
+              Salinity >= 20 & Salinity < 50 ~ "mesosaline (20-50 g/L)",
+              Salinity >= 50 ~ "hypersaline (>50 g/L)",
+              TRUE ~ "not determined "
+            )) %>%
+  count(Source, Category, name = "Count")
+
+# Boros & Kolpakova 2018 classification - sites
+boros_class_sites <- V4_meta %>%
+  group_by(SiteID) %>% slice(1) %>% ungroup() %>%
+  group_by(type) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  transmute(Source = "Boros & Kolpakova 2018 (sites)",
+            Category = type,
+            Count = Count)
+
+# Boros & Kolpakova 2018 classification - samples
+boros_class_samples <- V4_meta %>%
+  transmute(Source = "Boros & Kolpakova 2018 (samples)",
+            Category = type) %>%
+  count(Source, Category, name = "Count")
+
+
+
+# Combine
+salt_counts_all <- bind_rows(sacco_class, hammer_class, boros_class_sites, boros_class_samples)
+
+# Define independent category levels per Source
+category_levels_list <- list(
+  "Saccó et al. 2021 (samples)" = c("freshwater (< 1 g/L)", "moderately saline (1-3 g/L)",
+                  "brackish (3-10 g/L)", "saline (10-35 g/L)", "hypersaline (> 35 g/L)", 
+                  "not determined"),
+  "Hammer 1986 (samples)" = c("freshwater (<0.5 g/L)", "subsaline (0.5-3 g/L)",
+                   "hyposaline (3-20 g/L)", "mesosaline (20-50 g/L)", "hypersaline (>50 g/L)",
+                   "not determined "),
+  "Boros & Kolpakova 2018 (sites)" = c("freshwater", "soda", "soda-saline", "saline"),
+  "Boros & Kolpakova 2018 (samples)" = c("freshwater", "soda", "soda-saline", "saline")
+  )
+
+# Apply factor levels per Source
+salt_counts_all <- salt_counts_all %>%
+  group_by(Source) %>%
+  mutate(Category = factor(Category, levels = category_levels_list[[unique(Source)]])) %>%
+  ungroup() %>%
+  mutate(Source = factor(Source,
+                         levels = c("Saccó et al. 2021 (samples)",
+                                    "Hammer 1986 (samples)",
+                                    "Boros & Kolpakova 2018 (sites)",
+                                    "Boros & Kolpakova 2018 (samples)")
+                                    ))
+
+# Define a palette
+salt_colors <- c(
+  "Saccó et al. 2021 (samples)" = "#1f78b4",                        
+  "Hammer 1986 (samples)" = "#08306b",
+  "Boros & Kolpakova 2018 (sites)" = "#66c2a5",   
+  "Boros & Kolpakova 2018 (samples)" = "#66c2a5"
+  )
+
+# Plot barplots with facets
+ggplot(salt_counts_all, aes(x = Category, y = Count, fill = Source)) +
+  geom_col(color = "black") +
+  facet_wrap(~ Source, scales = "free_x", nrow = 2) +
+  scale_fill_manual(values = salt_colors) +
+  labs(x = NULL, y = "Count") +
+  theme_bw() +
+  theme(
+    #axis.text.x = element_text(angle = 30, hjust = 1),
+    #axis.title.y = element_text(size=14, vjust = 3),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
+    axis.text.y = element_text(size = 12),
+    axis.title.y = element_text(size = 14, vjust = 3),
+    axis.title.x = element_text(size = 14, vjust = -0.5),
+    strip.text = element_text(face = "bold", size = 14),
+    panel.background = element_blank(), 
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.background = element_blank(),
+    legend.position = "none",
+    #strip.text = element_text(face = "bold")
+  )
+
+ggsave("../Supporting_Information_FigS2.png", device = "png", width = 280, height = 250, units = c("mm"), dpi = 400)
+ggsave("../Supporting_Information_FigS2.svg", device = "svg", width = 280, height = 250, units = c("mm"), dpi = 400)
+
+
+```
+
+### Supporting Information Figure S3
 
 ```{r ternary plots}
 # Adding Na+ and K+ together
@@ -194,13 +312,13 @@ ternary_plots <- ggtern::grid.arrange(soda_cation_plot, soda_anion_plot,
 # save the plot
 ternary_grob  <- arrangeGrob(ternary_plots)
 
-ggsave("SupplFig2.png", ternary_grob, device = "png", scale = 1.2, width = 210, height = 280,
-       units = c("mm"), dpi = 600)
-ggsave("SupplFig2.svg", ternary_grob, device = "svg", scale = 1.2, width = 210, height = 280,
-       units = c("mm"), dpi = 600)
+ggsave("../Supporting_Information_SFig3.png", ternary_grob, device = "png", scale = 1.2, width = 210,
+       height = 280, units = c("mm"), dpi = 600)
+ggsave("../Supporting_Information_SFig3.svg", ternary_grob, device = "svg", scale = 1.2, width = 210,
+       height = 280, units = c("mm"), dpi = 600)
 ```
 
-### Supplementary Figure S3
+### Supporting Information Figure S4
 
 ```{r collinearity environmental}
 
@@ -208,13 +326,9 @@ ggsave("SupplFig2.svg", ternary_grob, device = "svg", scale = 1.2, width = 210, 
 # check the number of missing values for each parameter in metadata
 colSums(is.na(V4_meta))
 
-# instead of a table, visualize
-library(naniar)
-vis_miss(V4_meta)
-
 # Filter environmental parameters:
 V4_meta_env_filtered <- V4_meta %>%
-  select(-type, -Continent, -Site, -Lat, -Long, -SamplingDepth, -TOC)
+  select(-type, -Continent, -Region, -SiteID, -Lat, -Long, -SamplingDepth, -TOC, -X16S_Region_Amplified)
 
 # Remove rows with NAs
 env_data <- na.omit(V4_meta_env_filtered)
@@ -329,7 +443,7 @@ corrplot(corr_matrix,
 
 ```
 
-### Supplementary Figure S4
+### Supporting Information Figure S5
 
 ```{r, relative ionic gradient}
 # Creating the NMDS as for Fig 1
@@ -427,161 +541,51 @@ ion_e_nmds <- grid.arrange(nmds_v4_HCO3_CO3, nmds_v4_Cl, nmds_v4_SO4, nrow = 2)
 
 ```
 
-### Supplementary Figure S5
+### Supplementary Figure S6
 
 ```{r, NMDS ionic composition types}
 # Subset data based on ionic composition types
-## soda
-soda_meta <- filter(V4_meta, type == "soda")
-soda_otu <- V4_otu_table[rownames(V4_otu_table) %in% rownames(soda_meta), ]
-soda_otu_mds <- metaMDS(soda_otu)
-soda_otu_mds
-stressplot(soda_otu_mds)
-
-soda_otu_mds_rot <- MDSrotate(soda_otu_mds, soda_meta$Salinity, na.rm = T)
-plot(soda_otu_mds_rot)
-
-soda_data_scores <- as.data.frame(scores(soda_otu_mds_rot, "sites"))
-soda_data_scores$site <- rownames(soda_otu_mds_rot)  
-
-soda_grp <-soda_meta$type
-soda_cont<-soda_meta$Continent
-
-soda_data_scores$grp <- soda_grp
-soda_data_scores$cont <- soda_cont
-head(soda_data_scores)
-
-soda_V4_nmds <- ggplot(soda_data_scores, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(aes(shape = cont), fill = "#F8766D", size = 3, stroke = 1.2) +
-  scale_fill_manual(values = cols) +
-  scale_shape_manual(values = c(25, 24, 22, 21)) +
-  labs(shape="Continent") +
-  coord_equal() +
-  theme_bw() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size=16),
-        axis.title.y = element_text(size=16),
-        panel.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.text = element_text(size=14),
-        legend.title = element_text(size=14),
-        plot.background = element_blank())
-
-soda_V4_nmds
-
-## soda-saline
-sodasaline_meta <- filter(V4_meta, type == "soda-saline")
-sodasaline_otu <- V4_otu_table[rownames(V4_otu_table) %in% rownames(sodasaline_meta), ]
-sodasaline_otu_mds <- metaMDS(sodasaline_otu)
-sodasaline_otu_mds
-stressplot(sodasaline_otu_mds)
-
-sodasaline_otu_mds_rot <- MDSrotate(sodasaline_otu_mds, sodasaline_meta$Salinity, na.rm = T)
-plot(sodasaline_otu_mds_rot)
-
-sodasaline_data_scores <- as.data.frame(scores(sodasaline_otu_mds_rot, "sites"))
-sodasaline_data_scores$site <- rownames(sodasaline_otu_mds_rot)  
-
-sodasaline_grp <-sodasaline_meta$type
-sodasaline_cont<-sodasaline_meta$Continent
-
-sodasaline_data_scores$grp <- sodasaline_grp
-sodasaline_data_scores$cont <- sodasaline_cont
-head(sodasaline_data_scores)
-
-sodasaline_V4_nmds <- ggplot(sodasaline_data_scores, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(aes(shape = cont), fill = "#C77CFF", size = 3, stroke = 1.2) +
-  scale_fill_manual(values = cols) +
-  scale_shape_manual(values = c(25, 24, 22, 21)) +
-  labs(shape="Continent") +
-  coord_equal() +
-  theme_bw() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size=16),
-        axis.title.y = element_text(size=16),
-        panel.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.text = element_text(size=14),
-        legend.title = element_text(size=14),
-        plot.background = element_blank())
-
-sodasaline_V4_nmds
-
-## saline
-saline_meta <- filter(V4_meta, type == "saline")
-saline_otu <- V4_otu_table[rownames(V4_otu_table) %in% rownames(saline_meta), ]
-saline_otu_mds <- metaMDS(saline_otu)
-saline_otu_mds
-stressplot(saline_otu_mds)
-
-saline_otu_mds_rot <- MDSrotate(saline_otu_mds, saline_meta$Salinity, na.rm = T)
-plot(saline_otu_mds_rot)
-
-saline_data_scores <- as.data.frame(scores(saline_otu_mds_rot, "sites"))
-saline_data_scores$site <- rownames(saline_otu_mds_rot)  
-
-saline_grp <-saline_meta$type
-saline_cont<-saline_meta$Continent
-
-saline_data_scores$grp <- saline_grp
-saline_data_scores$cont <- saline_cont
-head(saline_data_scores)
-
-saline_V4_nmds <- ggplot(saline_data_scores, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(aes(shape = cont), fill = "#00BFC4", size = 3, stroke = 1.2) +
-  scale_fill_manual(values = cols) +
-  scale_shape_manual(values = c(25, 24, 22, 21)) +
-  labs(shape="Continent") +
-  coord_equal() +
-  theme_bw() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size=16),
-        axis.title.y = element_text(size=16),
-        panel.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.text = element_text(size=14),
-        legend.title = element_text(size=14),
-        plot.background = element_blank())
-
-saline_V4_nmds
-
-## freshwater
+#### freshwater ####
 freshwater_meta <- filter(V4_meta, type == "freshwater")
 freshwater_otu <- V4_otu_table[rownames(V4_otu_table) %in% rownames(freshwater_meta), ]
+
+# Write out the tables
+write.csv(freshwater_meta, "freshwater_meta.csv", row.names = TRUE)
+write.csv(freshwater_otu, "freshwater_otu.csv", row.names = TRUE)
+
+# Do the ordination
 freshwater_otu_mds <- metaMDS(freshwater_otu)
 freshwater_otu_mds
 stressplot(freshwater_otu_mds)
 
+# Rotate with salinity
 freshwater_otu_mds_rot <- MDSrotate(freshwater_otu_mds, freshwater_meta$Salinity, na.rm = T)
 plot(freshwater_otu_mds_rot)
 
+# Adding data to the ordination
 freshwater_data_scores <- as.data.frame(scores(freshwater_otu_mds_rot, "sites"))
 freshwater_data_scores$site <- rownames(freshwater_otu_mds_rot)  
+freshwater_data_scores$cont <- freshwater_meta$Continent
 
-freshwater_grp <-freshwater_meta$type
-freshwater_cont<-freshwater_meta$Continent
+freshwater_species_scores <- as.data.frame(scores(freshwater_otu_mds_rot, "species"))
+freshwater_species_scores$species <- rownames(freshwater_otu_mds_rot)
 
-freshwater_data_scores$grp <- freshwater_grp
-freshwater_data_scores$cont <- freshwater_cont
-head(freshwater_data_scores)
+# Simper25
+name_otus_fresh<-read.table("../data/V4_simper25_freshwater_continent.txt", header = TRUE, row.names = 1, sep ="\t") 
+freshwater_species_scores$name  <- name_otus_fresh$name
 
+# Plot
 freshwater_V4_nmds <- ggplot(freshwater_data_scores, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(aes(shape = cont), fill = "#B6E665",  size = 3, stroke = 1.2) +
+  geom_text_repel(data = freshwater_species_scores, aes(x = NMDS1, y = NMDS2, label = name),size = 5, alpha = 0.7, max.overlaps = Inf, box.padding = 0.4,
+                  point.padding = 0.8, force = 5, force_pull = 0) +
+  geom_point(aes(shape = cont), fill = "#B6E665", size = 3, stroke = 1.2) +
   scale_fill_manual(values = cols) +
-  scale_shape_manual(values = c(25, 24, 22, 21)) +
-  labs(shape="Continent") +
+  scale_shape_manual(values = c(22, 21)) +
+  labs(shape="Continent", title = "Freshwater") +
   coord_equal() +
   theme_bw() +
-  theme(axis.text.x = element_blank(),
+  theme(plot.title = element_text(hjust = 0, vjust = 2, size = 14),
+        axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank(),
         axis.title.x = element_text(size=16),
@@ -595,16 +599,181 @@ freshwater_V4_nmds <- ggplot(freshwater_data_scores, aes(x = NMDS1, y = NMDS2)) 
 
 freshwater_V4_nmds
 
-ion_comp_type_sep_nmds <- grid.arrange(soda_V4_nmds, sodasaline_V4_nmds, saline_V4_nmds, freshwater_V4_nmds, nrow = 2)
+#### soda ####
+soda_meta <- filter(V4_meta, type == "soda")
+soda_otu <- V4_otu_table[rownames(V4_otu_table) %in% rownames(soda_meta), ]
 
-ggsave("SupplFig4.png", ion_comp_type_sep_nmds, device = "png", scale = 1.4, width = 210, 
-       height = 210, units = c("mm"), dpi = 400)
-ggsave("SupplFig4.svg", ion_comp_type_sep_nmds, device = "svg", scale = 2, width = 210,
-       height = 280, units = c("mm"), dpi = 400)
+# Write out the tables
+write.csv(soda_meta, "soda_meta.csv", row.names = TRUE)
+write.csv(soda_otu, "soda_otu.csv", row.names = TRUE)
+
+# Do the ordination
+soda_otu_mds <- metaMDS(soda_otu)
+soda_otu_mds
+stressplot(soda_otu_mds)
+
+# Rotate with salinity
+soda_otu_mds_rot <- MDSrotate(soda_otu_mds, soda_meta$Salinity, na.rm = T)
+plot(soda_otu_mds_rot)
+
+# Adding data to the ordination
+soda_data_scores <- as.data.frame(scores(soda_otu_mds_rot, "sites"))
+soda_data_scores$site <- rownames(soda_otu_mds_rot)  
+soda_data_scores$cont <- soda_meta$Continent
+
+soda_species_scores <- as.data.frame(scores(soda_otu_mds_rot, "species"))
+soda_species_scores$species <- rownames(soda_otu_mds_rot)
+
+# Simper25
+name_otus<-read.table("../data/V4_simper25_soda_continent.txt", header = TRUE, row.names = 1, sep ="\t") 
+soda_species_scores$name  <- name_otus$name
+
+# Plot
+soda_V4_nmds <- ggplot(soda_data_scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_text_repel(data = soda_species_scores, aes(x = NMDS1, y = NMDS2, label = name),size = 5, alpha = 0.7, max.overlaps = Inf, box.padding = 0.4,
+                  point.padding = 0.8, force = 5, force_pull = 0) +
+  geom_text(data = soda_data_scores, aes(x = NMDS1, y = NMDS2, label = rownames(soda_data_scores)), size=3) +
+  geom_point(aes(shape = cont), fill = "#F8766D", size = 3, stroke = 1.2) +
+  scale_fill_manual(values = cols) +
+  scale_shape_manual(values = c(25, 24, 22, 21)) +
+  labs(shape="Continent", title = "Soda") +
+  coord_equal() +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0, vjust = 2, size = 14),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size=16),
+        axis.title.y = element_text(size=16),
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=14),
+        plot.background = element_blank())
+
+soda_V4_nmds
+
+#### soda-saline ####
+sodasaline_meta <- filter(V4_meta, type == "soda-saline")
+sodasaline_otu <- V4_otu_table[rownames(V4_otu_table) %in% rownames(sodasaline_meta), ]
+
+# Write out the tables
+write.csv(sodasaline_meta, "sodasaline_meta.csv", row.names = TRUE)
+write.csv(sodasaline_otu, "sodasaline_otu.csv", row.names = TRUE)
+
+# Do the ordination
+sodasaline_otu_mds <- metaMDS(sodasaline_otu)
+sodasaline_otu_mds
+stressplot(sodasaline_otu_mds)
+
+# Rotate with salinity
+sodasaline_otu_mds_rot <- MDSrotate(sodasaline_otu_mds, sodasaline_meta$Salinity, na.rm = T)
+plot(sodasaline_otu_mds_rot)
+
+# Adding data to the ordination
+sodasaline_data_scores <- as.data.frame(scores(sodasaline_otu_mds_rot, "sites"))
+sodasaline_data_scores$site <- rownames(sodasaline_otu_mds_rot)  
+sodasaline_data_scores$cont <- sodasaline_meta$Continent
+
+sodasaline_species_scores <- as.data.frame(scores(sodasaline_otu_mds_rot, "species"))
+sodasaline_species_scores$species <- rownames(sodasaline_otu_mds_rot)
+
+# Simper25
+name_sodasaline_otus<-read.table("../data/V4_simper25_sodasaline_continent.txt", header = TRUE, row.names = 1, sep ="\t") 
+sodasaline_species_scores$name  <- name_sodasaline_otus$name
+
+# Plot
+sodasaline_V4_nmds <- ggplot(sodasaline_data_scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_text_repel(data = sodasaline_species_scores, aes(x = NMDS1, y = NMDS2, label = name),size = 5, alpha = 0.7, max.overlaps = Inf, box.padding = 0.4,
+                  point.padding = 0.8, force = 5, force_pull = 0) +
+  geom_point(aes(shape = cont), fill = "#C77CFF", size = 3, stroke = 1.2) +
+  scale_fill_manual(values = cols) +
+  scale_shape_manual(values = c(22, 21)) +
+  labs(shape="Continent", title = "Soda-saline") +
+  coord_equal() +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0, vjust = 2, size = 14),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size=16),
+        axis.title.y = element_text(size=16),
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=14),
+        plot.background = element_blank())
+
+sodasaline_V4_nmds
+
+#### saline ####
+saline_meta <- filter(V4_meta, type == "saline")
+saline_otu <- V4_otu_table[rownames(V4_otu_table) %in% rownames(saline_meta), ]
+
+# Write out the tables
+write.csv(saline_meta, "saline_meta.csv", row.names = TRUE)
+write.csv(saline_otu, "saline_otu.csv", row.names = TRUE)
+
+# Do the ordination
+saline_otu_mds <- metaMDS(saline_otu)
+saline_otu_mds
+stressplot(saline_otu_mds)
+
+# Rotate with salinity
+saline_otu_mds_rot <- MDSrotate(saline_otu_mds, saline_meta$Salinity, na.rm = T)
+plot(saline_otu_mds_rot)
+
+# Adding data to the ordination
+saline_data_scores <- as.data.frame(scores(saline_otu_mds_rot, "sites"))
+saline_data_scores$site <- rownames(saline_otu_mds_rot)  
+saline_data_scores$cont <- saline_meta$Continent
+
+saline_species_scores <- as.data.frame(scores(saline_otu_mds_rot, "species"))
+saline_species_scores$species <- rownames(saline_otu_mds_rot)
+
+# Simper25
+name_saline_otus<-read.table("../data/V4_simper25_saline_continent.txt", header = TRUE, row.names = 1, sep ="\t") 
+saline_species_scores$name  <- name_saline_otus$name
+
+# Plot
+saline_V4_nmds <- ggplot(saline_data_scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_text_repel(data = saline_species_scores, aes(x = NMDS1, y = NMDS2, label = name),size = 5, alpha = 0.7, max.overlaps = Inf, box.padding = 0.4,
+                  point.padding = 0.8, force = 5, force_pull = 0) +
+  geom_point(aes(shape = cont), fill = "#00BFC4", size = 3, stroke = 1.2) +
+  scale_fill_manual(values = cols) +
+  scale_shape_manual(values = c(22, 21)) +
+  labs(shape="Continent", title = "Saline") +
+  coord_equal() +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0, vjust = 2, size = 14),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size=16),
+        axis.title.y = element_text(size=16),
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=14),
+        plot.background = element_blank())
+
+saline_V4_nmds
+
+#### merging the plots into one figure ####
+
+ion_comp_type_sep_nmds <- grid.arrange(freshwater_V4_nmds, soda_V4_nmds, sodasaline_V4_nmds, saline_V4_nmds, nrow = 2)
+
+ggsave("Supporting_Information_FigS6.png", ion_comp_type_sep_nmds, device = "png", scale = 1.4, width = 210, 
+       height = 210, units = c("mm"), dpi = 300)
+ggsave("Supporting_Information_FigS6.svg", ion_comp_type_sep_nmds, device = "svg", scale = 2, width = 210,
+       height = 280, units = c("mm"), dpi = 300)
 
 ```
 
-### Supplementary Figure S6
+### Supporting Information Figure S7
 
 ```{r, simper V3-V4}
 # filter meta for V3-V4
@@ -639,7 +808,8 @@ head(V3V4_data_scores)
 V3V4_species_scores <- as.data.frame(scores(V3V4_otu_nmds_rot, "species"))
 V3V4_species_scores$species <- rownames(V3V4_otu_nmds_rot)
 
-name_otus<-read.table("../data/V3V4_simper25.txt",header = TRUE, row.names = 1,sep ="\t")                         name <- name_otus$name
+name_otus<-read.table("../data/V3V4_simper25.txt", header = TRUE, row.names = 1, sep ="\t") 
+name <- name_otus$name
 V3V4_species_scores$name  <- name
 head(V3V4_species_scores)
 
@@ -666,7 +836,406 @@ V3V4_NMDS <- ggplot(V3V4_data_scores, aes(x = NMDS1, y = NMDS2)) +
 V3V4_NMDS
 
 ```
-### Supplementary Figure S7
+
+### Supporting Information Figure S8
+
+```{r Distance-Decay Relationships}
+# For all samples
+# Calculating Bray-Curtis (BC) dissimilarity
+
+braydissim_all <- vegdist(V4_otu_table, method = "bray")
+write.table(as.matrix(braydissim), "bray_ds_matrix_all.txt")
+
+V4mat_all <- read.table("bray_ds_matrix_all.txt")
+
+# convert to BC similarity
+V4mat_all_bc_sim <- 1-as.matrix(V4mat_all)
+V4mat_all_bc_sim
+
+# Calculate distance between sampling sites taken the Earth's curvature into account
+
+V4geo_all <- select(V4_meta, "Long", "Lat")
+V4dist_all <- distm(V4geo_all, fun = distHaversine)
+rownames(V4dist_all) <- rownames(V4geo_all)
+colnames(V4dist_all) <- rownames(V4geo_all)
+
+# Divide distance to represent km
+V4dist_all <- V4dist_all/1000
+
+# Combine the matrices into a data frame
+DDR_data_all <- data.frame(Distance = as.vector(V4dist_all), Similarity = as.vector(V4mat_all_bc_sim))
+
+# Create the scatter plot
+DDR_plot_all <- ggplot(DDR_data_all, aes(x = Distance, y = Similarity)) +
+  geom_point(size = 3, fill = "darkgoldenrod2", shape = 21, , stroke = 1.2) +
+  labs(x = "Distance (× 1000 km)", y = "Bray-Curtis Similarity", title = "All samples") +
+  geom_smooth(method = "lm", col = 'blue', fill = NA, level = 0) +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    axis.text.x = element_text(hjust = 0.5, size = 18, colour = 'black'),
+    axis.text.y = element_text(size = 18, colour = 'black'),
+    axis.line = element_line(size = 0.5, colour = "black"),
+    legend.text = element_text(size = 18)
+  ) +
+  expand_limits(x = 0, y = 0) +
+  scale_x_continuous(breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
+                                11000, 12000, 13000, 14000, 15000), 
+                     labels = c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")) +
+  theme(legend.position = 'none')
+
+DDR_plot_all
+
+ggsave("SupportingInformation_FigS8a.png", DDR_plot_all, device = "png", width = 280,
+       height = 175, units = c("mm"), dpi = 300)
+ggsave("SupportingInformation_FigS8a.svg", DDR_plot_all, device = "svg", width = 280,
+       height = 175, units = c("mm"), dpi = 300)
+
+
+DDR_data_all$Distance_plot <- DDR_data_all$Distance /1000
+DDR_linmodel_all <- lm(Similarity ~ Distance_plot, data = DDR_data_all)
+DDR_linmodel_all
+summary(DDR_linmodel_all)
+coef(DDR_linmodel_all)["Distance_plot"]
+
+# Mantel test for significance
+mantel_test_all<-mantel(braydissim_all, V4dist_all, method="pearson", permutations=999)
+mantel_test_all
+
+#Mantel correlog
+mantel_correlog_all<-mantel.correlog(braydissim_all, D.geo=V4dist_all, XY=NULL, n.class=0, break.pts=NULL, 
+                                 cutoff=F, r.type="pearson", nperm=999, mult="holm", progressive=TRUE)
+mantel_correlog_all
+plot(mantel_correlog_all)
+
+#### Create DDR for each ionic compsoition type ####
+#### Freshwater
+freshwater_meta  <- filter(V4_meta, type=="freshwater")
+freshwater_OTU <- V4_otu_table[rownames(V4_otu_table) %in% rownames(freshwater_meta), ]
+
+braydissim_freshwater <- vegdist(freshwater_OTU, method = "bray")
+write.table(as.matrix(braydissim_freshwater), "bray_ds_matrix_freshwater.txt")
+
+V4mat_freshwater <- read.table("bray_ds_matrix_freshwater.txt")
+
+# convert to BC similarity
+V4mat_freshwater_bc_sim <- 1-as.matrix(V4mat_freshwater)
+V4mat_freshwater_bc_sim
+
+V4geo_freshwater <- select(freshwater_meta, "Long", "Lat")
+V4dist_freshwater <- distm(V4geo_freshwater, fun = distHaversine)
+rownames(V4dist_freshwater) <- rownames(V4geo_freshwater)
+colnames(V4dist_freshwater) <- rownames(V4geo_freshwater)
+V4dist_freshwater <- V4dist_freshwater/1000
+
+# Combine the matrices into a data frame
+DDR_data_freshwater <- data.frame(Distance = as.vector(V4dist_freshwater), Similarity = as.vector(V4mat_freshwater_bc_sim))
+
+# Create the scatter plot
+DDR_plot_freshwater <- ggplot(DDR_data_freshwater, aes(x = Distance, y = Similarity)) +
+  geom_point(size = 3, fill = "#B6E665", shape = 21, , stroke = 1.2) +
+  labs(x = "Distance (× 1000 km)", y = "Bray-Curtis Similarity", title = "Freshwater") +
+  geom_smooth(method = "lm", col = 'blue', fill = NA, level = 0) +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    axis.text.x = element_text(hjust = 0.5, size = 18, colour = 'black'),
+    axis.text.y = element_text(size = 18, colour = 'black'),
+    axis.line = element_line(size = 0.5, colour = "black"),
+    legend.text = element_text(size = 18)
+  ) +
+  expand_limits(x = 0, y = 0) +
+  scale_x_continuous(breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
+                                11000, 12000, 13000, 14000, 15000), 
+                     labels = c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")) +
+  theme(legend.position = 'none')
+
+DDR_plot_freshwater
+
+ggsave("SupportingInformation_FigS8b1.png", DDR_plot_freshwater, device = "png", width = 280,
+       height = 175, units = c("mm"), dpi = 300)
+ggsave("SupportingInformation_FigS8b1.svg", DDR_plot_freshwater, device = "svg", width = 280,
+       height = 175, units = c("mm"), dpi = 300)
+
+#
+DDR_data_freshwater$Distance_plot <- DDR_data_freshwater$Distance /1000
+DDR_linmodel_freshwater <- lm(Similarity ~ Distance_plot, data = DDR_data_freshwater)
+DDR_linmodel_freshwater
+summary(DDR_linmodel_freshwater)
+coef(DDR_linmodel_freshwater)["Distance_plot"]
+
+# Mantel test for significance
+mantel_test_freshwater<-mantel(braydissim_freshwater, V4dist_freshwater, method="pearson", permutations=999)
+mantel_test_freshwater
+
+#Mantel correlog
+mantel_correlog_freshwater<-mantel.correlog(braydissim_freshwater, D.geo=V4dist_freshwater, XY=NULL, n.class=0, break.pts=NULL, 
+                                 cutoff=F, r.type="pearson", nperm=999, mult="holm", progressive=TRUE)
+mantel_correlog_freshwater
+plot(mantel_correlog_freshwater)
+
+
+#### Soda
+soda_meta <- filter(V4_meta, type=="soda")
+soda_OTU <- V4_otu_table[rownames(V4_otu_table) %in% rownames(soda_meta), ]
+
+braydissim_soda <- vegdist(soda_OTU, method = "bray")
+write.table(as.matrix(braydissim_soda), "bray_ds_matrix_soda.txt")
+
+V4mat_soda <- read.table("bray_ds_matrix_soda.txt")
+
+# convert to BC similarity
+V4mat_soda_bc_sim <- 1-as.matrix(V4mat_soda)
+V4mat_soda_bc_sim
+
+V4geo_soda <- select(soda_meta, "Long", "Lat")
+V4dist_soda <- distm(V4geo_soda, fun = distHaversine)
+rownames(V4dist_soda) <- rownames(V4geo_soda)
+colnames(V4dist_soda) <- rownames(V4geo_soda)
+V4dist_soda <- V4dist_soda/1000
+
+# Combine the matrices into a data frame
+DDR_data_soda <- data.frame(Distance = as.vector(V4dist_soda), Similarity = as.vector(V4mat_soda_bc_sim))
+
+# Create the scatter plot
+DDR_plot_soda <- ggplot(DDR_data_soda, aes(x = Distance, y = Similarity)) +
+  geom_point(size = 3, fill = "#F8766D", shape = 21, , stroke = 1.2) +
+  labs(x = "Distance (× 1000 km)", y = "Bray-Curtis Similarity", title = "Soda") +
+  geom_smooth(method = "lm", col = 'blue', fill = NA, level = 0) +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    axis.text.x = element_text(hjust = 0.5, size = 18, colour = 'black'),
+    axis.text.y = element_text(size = 18, colour = 'black'),
+    axis.line = element_line(size = 0.5, colour = "black"),
+    legend.text = element_text(size = 18)
+  ) +
+  expand_limits(x = 0, y = 0) +
+  scale_x_continuous(breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
+                                11000, 12000, 13000, 14000, 15000), 
+                     labels = c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")) +
+  theme(legend.position = 'none')
+
+DDR_plot_soda
+
+ggsave("SupportingInformation_FigS8b2.png", DDR_plot_soda, device = "png", width = 280,
+       height = 175, units = c("mm"), dpi = 300)
+ggsave("SupportingInformation_FigS8b2.svg", DDR_plot_soda, device = "svg", width = 280,
+       height = 175, units = c("mm"), dpi = 300)
+
+DDR_data_soda$Distance_plot <- DDR_data_soda$Distance /1000
+DDR_linmodel_soda <- lm(Similarity ~ Distance_plot, data = DDR_data_soda)
+DDR_linmodel_soda
+summary(DDR_linmodel_soda)
+coef(DDR_linmodel_soda)["Distance_plot"]
+
+# Mantel test for significance
+mantel_test_soda<-mantel(braydissim_soda, V4dist_soda, method="pearson", permutations=999)
+mantel_test_soda
+
+#Mantel correlog
+mantel_correlog_soda<-mantel.correlog(braydissim_soda, D.geo=V4dist_soda, XY=NULL, n.class=0, break.pts=NULL, 
+                                 cutoff=F, r.type="pearson", nperm=999, mult="holm", progressive=TRUE)
+mantel_correlog_soda
+plot(mantel_correlog_soda)
+
+
+#### Sodasaline
+sodasaline_meta  <- filter(V4_meta, type=="soda-saline")
+sodasaline_OTU <- V4_otu_table[rownames(V4_otu_table) %in% rownames(sodasaline_meta), ]
+
+braydissim_sodasaline <- vegdist(sodasaline_OTU, method = "bray")
+write.table(as.matrix(braydissim_sodasaline), "bray_ds_matrix_sodasaline.txt")
+
+V4mat_sodasaline <- read.table("bray_ds_matrix_sodasaline.txt")
+
+# convert to BC similarity
+V4mat_sodasaline_bc_sim <- 1-as.matrix(V4mat_sodasaline)
+V4mat_sodasaline_bc_sim
+
+V4geo_sodasaline <- select(sodasaline_meta, "Long", "Lat")
+V4dist_sodasaline <- distm(V4geo_sodasaline, fun = distHaversine)
+rownames(V4dist_sodasaline) <- rownames(V4geo_sodasaline)
+colnames(V4dist_sodasaline) <- rownames(V4geo_sodasaline)
+V4dist_sodasaline <- V4dist_sodasaline/1000
+
+# Combine the matrices into a data frame
+DDR_data_sodasaline <- data.frame(Distance = as.vector(V4dist_sodasaline), Similarity = as.vector(V4mat_sodasaline_bc_sim))
+
+# Create the scatter plot
+DDR_plot_sodasaline <- ggplot(DDR_data_sodasaline, aes(x = Distance, y = Similarity)) +
+  geom_point(size = 3, fill = "#C77CFF", shape = 21, , stroke = 1.2) +
+  labs(x = "Distance (× 1000 km)", y = "Bray-Curtis Similarity", title = "Soda-saline") +
+  geom_smooth(method = "lm", col = 'blue', fill = NA, level = 0) +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    axis.text.x = element_text(hjust = 0.5, size = 18, colour = 'black'),
+    axis.text.y = element_text(size = 18, colour = 'black'),
+    axis.line = element_line(size = 0.5, colour = "black"),
+    legend.text = element_text(size = 18)
+  ) +
+  expand_limits(x = 0, y = 0) +
+  scale_x_continuous(breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
+                                11000, 12000, 13000, 14000, 15000), 
+                     labels = c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")) +
+  theme(legend.position = 'none')
+
+DDR_plot_sodasaline
+
+ggsave("SupportingInformation_FigS8b3.png", DDR_plot_sodasaline, device = "png", width = 280,
+       height = 175, units = c("mm"), dpi = 300)
+ggsave("SupportingInformation_FigS8b3.svg", DDR_plot_sodasaline, device = "svg", width = 280,
+       height = 175, units = c("mm"), dpi = 300)
+
+DDR_data_sodasaline$Distance_plot <- DDR_data_sodasaline$Distance /1000
+DDR_linmodel_sodasaline <- lm(Similarity ~ Distance_plot, data = DDR_data_sodasaline)
+DDR_linmodel_sodasaline
+summary(DDR_linmodel_sodasaline)
+coef(DDR_linmodel_sodasaline)["Distance_plot"]
+
+# Mantel test for significance
+mantel_test_sodasaline<-mantel(braydissim_sodasaline, V4dist_sodasaline, method="pearson", permutations=999)
+mantel_test_sodasaline
+
+#Mantel correlog
+mantel_correlog_sodasaline<-mantel.correlog(braydissim_sodasaline, D.geo=V4dist_sodasaline, XY=NULL, n.class=0, break.pts=NULL, 
+                                 cutoff=F, r.type="pearson", nperm=999, mult="holm", progressive=TRUE)
+mantel_correlog_sodasaline
+plot(mantel_correlog_sodasaline)
+
+#### Saline
+saline_meta  <- filter(V4_meta, type=="saline")
+saline_OTU <- V4_otu_table[rownames(V4_otu_table) %in% rownames(saline_meta), ]
+
+saline_meta <- filter(V4_meta, type=="saline")
+saline_OTU <- V4_otu_table[rownames(V4_otu_table) %in% rownames(saline_meta), ]
+
+braydissim_saline <- vegdist(saline_OTU, method = "bray")
+write.table(as.matrix(braydissim_saline), "bray_ds_matrix_saline.txt")
+
+V4mat_saline <- read.table("bray_ds_matrix_saline.txt")
+
+# convert to BC similarity
+V4mat_saline_bc_sim <- 1-as.matrix(V4mat_saline)
+V4mat_saline_bc_sim
+
+V4geo_saline <- select(saline_meta, "Long", "Lat")
+V4dist_saline <- distm(V4geo_saline, fun = distHaversine)
+rownames(V4dist_saline) <- rownames(V4geo_saline)
+colnames(V4dist_saline) <- rownames(V4geo_saline)
+V4dist_saline <- V4dist_saline/1000
+
+# Combine the matrices into a data frame
+DDR_data_saline <- data.frame(Distance = as.vector(V4dist_saline), Similarity = as.vector(V4mat_saline_bc_sim))
+
+# Create the scatter plot
+DDR_plot_saline <- ggplot(DDR_data_saline, aes(x = Distance, y = Similarity)) +
+  geom_point(size = 3, fill = "#00BFC4", shape = 21, , stroke = 1.2) +
+  labs(x = "Distance (× 1000 km)", y = "Bray-Curtis Similarity", title = "Saline") +
+  geom_smooth(method = "lm", col = 'blue', fill = NA, level = 0) +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    axis.text.x = element_text(hjust = 0.5, size = 18, colour = 'black'),
+    axis.text.y = element_text(size = 18, colour = 'black'),
+    axis.line = element_line(size = 0.5, colour = "black"),
+    legend.text = element_text(size = 18)
+  ) +
+  expand_limits(x = 0, y = 0) +
+  scale_x_continuous(breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
+                                11000, 12000, 13000, 14000, 15000), 
+                     labels = c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")) +
+  theme(legend.position = 'none')
+
+DDR_plot_saline
+
+ggsave("SupportingInformation_FigS8b4.png", DDR_plot_saline, device = "png", width = 280,
+       height = 175, units = c("mm"), dpi = 300)
+ggsave("SupportingInformation_FigS8b4.svg", DDR_plot_saline, device = "svg", width = 280,
+       height = 175, units = c("mm"), dpi = 300)
+
+DDR_data_saline$Distance_plot <- DDR_data_saline$Distance /1000
+DDR_linmodel_saline <- lm(Similarity ~ Distance_plot, data = DDR_data_saline)
+DDR_linmodel_saline
+summary(DDR_linmodel_saline)
+coef(DDR_linmodel_saline)["Distance_plot"]
+
+# Mantel test for significance
+mantel_test_saline<-mantel(braydissim_saline, V4dist_saline, method="pearson", permutations=999)
+mantel_test_saline
+
+#Mantel correlog
+mantel_correlog_saline<-mantel.correlog(braydissim_saline, D.geo=V4dist_saline, XY=NULL, n.class=0, break.pts=NULL, 
+                                 cutoff=F, r.type="pearson", nperm=999, mult="holm", progressive=TRUE)
+mantel_correlog_saline
+plot(mantel_correlog_saline)
+
+####
+
+DDR_FigS8 <- grid.arrange(DDR_plot_all, DDR_plot_freshwater, DDR_plot_soda, DDR_plot_sodasaline, DDR_plot_saline, nrow = 3, ncol = 2)
+
+ggsave("Supporting_Information_SFig8.png", DDR_FigS8, device = "png", scale = 1.4, width = 210, 
+       height = 210, units = c("mm"), dpi = 300)
+
+ggsave("Supporting_Information_SFig8.svg", DDR_FigS8, device = "svg", scale = 1.4, width = 210, 
+       height = 210, units = c("mm"), dpi = 300)
+
+```
+
+
+### Supporting Information Figure S9
+
+```{r testing similarity between V4 and V3-V4 datasets}
+# Selecting samples present in the V3-V4 dataset from the V4 dataset
+
+V4_otu_table_sub <- V4_otu_table[rownames(V4_otu_table) %in% rownames(V3V4_otu_table), ]
+V4_meta_sub <- V4_meta[rownames(V4_meta) %in% rownames(V3V4_meta), ]
+
+V4_otu_nmds <- metaMDS(V4_otu_table_sub)
+V4_otu_nmds
+stressplot(V4_otu_nmds)
+
+plot(V4_otu_nmds)
+orditorp(V4_otu_nmds, display="sites", cex=1, air=0.01)
+
+V4_otu_nmds_rot <- with(V4_meta_sub, MDSrotate(V4_otu_nmds, V4_meta_sub$Salinity, na.rm = T))
+plot(V4_otu_nmds_rot)
+orditorp(V4_otu_nmds_rot,display="sites",cex=1,air=0.01)
+
+# run procrustes
+
+proc <- procrustes(X = V4_otu_nmds_rot, Y = V3V4_otu_nmds_rot)
+proc
+
+plot(proc, kind = 1, type = "p", xlab = "NMDS1", ylab = "NMDS2", cex = 0.8)
+plot(proc, kind = 1, type = "text", xlab = "NMDS1", ylab = "NMDS2", cex = 0.3)
+
+plot(proc, kind = 2)
+
+protest(X = V4_otu_nmds_rot, Y = V3V4_otu_nmds_rot, scores = "sites", permutations = 999)
+
+### PERMANOVA test
+
+adonis2(V4_otu_table ~ X16S_Region_Amplified, data = V4_meta)
+
+```
+
 ### perform NMDS
 
 ```{r nmds}
